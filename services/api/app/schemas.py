@@ -1,11 +1,14 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    # Plain str, not EmailStr: strict RFC email validation rejects the .local TLD used
+    # by this prototype's seeded demo accounts (.local is a reserved special-use domain).
+    # Login security comes from password verification, not email-format strictness.
+    email: str
     password: str
 
 
