@@ -1,3 +1,4 @@
+import re
 from typing import Any, Callable
 
 QuestionDef = dict[str, Any]
@@ -114,3 +115,56 @@ def compute_missing_flags(facts: dict[str, Any]) -> dict[str, bool]:
         "missing_severity": facts.get("severity") is None,
         "missing_onset": facts.get("onset") is None,
     }
+
+
+# Pre-fill threshold for the AI-suggested-answer feature. This only ever pre-selects a
+# default on the question UI — it never writes to `facts` on its own. The patient must
+# still explicitly confirm (or change) the value via the normal answer-submission path,
+# because rule-engine inputs must stay explicit patient-confirmed answers, never raw AI
+# inference (see README §7).
+SUGGESTION_CONFIDENCE_THRESHOLD = 0.75
+
+_RISK_INDICATOR_QUESTION_KEYS = {"chest_discomfort", "sweating", "arm_radiation", "fainting", "confusion"}
+
+_DURATION_PATTERN = re.compile(r"(\d+)\s*(hour|hours|day|days|week|weeks)")
+
+
+def _duration_string_to_hours(duration: str) -> float | None:
+    match = _DURATION_PATTERN.search(duration)
+    if not match:
+        return None
+    amount = float(match.group(1))
+    unit = match.group(2)
+    if unit.startswith("day"):
+        return amount * 24
+    if unit.startswith("week"):
+        return amount * 24 * 7
+    return amount
+
+
+def suggested_value(question: QuestionDef, ai_preview: dict[str, Any] | None) -> tuple[Any, str] | None:
+    """Returns (value, reason) if the AI's free-text read is confident enough to suggest a
+    default for this question, else None. Every question is still asked regardless."""
+    if not ai_preview or ai_preview.get("confidence", 0) < SUGGESTION_CONFIDENCE_THRESHOLD:
+        return None
+
+    key = question["key"]
+    reason = "Based on your description, we think this might be the answer — confirm or change it."
+
+    if key in _RISK_INDICATOR_QUESTION_KEYS:
+        if key in (ai_preview.get("possible_risk_indicators") or []):
+            return True, reason
+        return None
+
+    if key == "severity" and ai_preview.get("severity"):
+        return ai_preview["severity"], reason
+    if key == "onset" and ai_preview.get("onset"):
+        return ai_preview["onset"], reason
+    if key == "worsening" and ai_preview.get("worsening") is not None:
+        return ai_preview["worsening"], reason
+    if key == "duration_hours" and ai_preview.get("duration"):
+        hours = _duration_string_to_hours(ai_preview["duration"])
+        if hours is not None:
+            return hours, reason
+
+    return None

@@ -58,6 +58,44 @@ class AppointmentRequestOut(BaseModel):
     recommendation: dict | None
     created_at: datetime
     submitted_at: datetime | None
+    preferred_doctor: str | None = None
+    preferred_time: datetime | None = None
+    insurance_type: str | None = None
+    insurance_provider: str | None = None
+
+
+class DoctorOut(BaseModel):
+    id: str
+    name: str
+    specialty: str
+    bio: str
+
+
+class TimeSlotOut(BaseModel):
+    datetime_iso: str
+    label: str
+
+
+class AvailabilityOut(BaseModel):
+    doctors: list[DoctorOut]
+    time_slots: list[TimeSlotOut]
+
+
+class DoctorSuggestionsOut(BaseModel):
+    suggested: list[DoctorOut]
+    reason: str
+
+
+class TimeSuggestionOut(BaseModel):
+    suggested: TimeSlotOut | None
+    reason: str
+
+
+class BookingUpdateIn(BaseModel):
+    preferred_doctor: str | None = None
+    preferred_time: datetime | None = None
+    insurance_type: str | None = None
+    insurance_provider: str | None = None
 
 
 class NextQuestionOut(BaseModel):
@@ -69,6 +107,8 @@ class NextQuestionOut(BaseModel):
     reason: str | None = None
     questions_answered: int = 0
     max_questions: int = 0
+    suggested_value: Any | None = None
+    suggested_reason: str | None = None
 
 
 class QuestionResponseIn(BaseModel):
@@ -112,3 +152,6 @@ class QueueItem(BaseModel):
     created_at: datetime
     submitted_at: datetime | None
     assigned_staff_id: str | None
+    preferred_doctor: str | None = None
+    preferred_time: datetime | None = None
+    patient_name: str | None = None

@@ -14,6 +14,8 @@ type NextQuestion = {
   reason?: string;
   questions_answered: number;
   max_questions: number;
+  suggested_value?: string | number | boolean | null;
+  suggested_reason?: string | null;
 };
 
 export default function QuestionsPage() {
@@ -30,9 +32,13 @@ export default function QuestionsPage() {
     try {
       const next = await apiFetch<NextQuestion>(`/api/v1/appointment-requests/${id}/next-question`);
       setQuestion(next);
-      setAnswer("");
+      if (next.suggested_value !== undefined && next.suggested_value !== null) {
+        setAnswer(next.input_type === "boolean" ? (next.suggested_value ? "yes" : "no") : String(next.suggested_value));
+      } else {
+        setAnswer("");
+      }
       if (next.done) {
-        router.push(`/requests/${id}/review`);
+        router.push(`/requests/${id}/doctors`);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to load the next question.");
@@ -98,6 +104,11 @@ export default function QuestionsPage() {
         )}
         <h1 className="text-xl font-semibold text-text-primary">{question.question_text}</h1>
         <p className="text-xs text-text-muted">{question.reason}</p>
+        {question.suggested_reason && (
+          <p className="rounded-input bg-bg-secondary px-3 py-2 text-xs text-text-secondary">
+            {question.suggested_reason}
+          </p>
+        )}
 
         {question.input_type === "choice" && (
           <div className="flex flex-wrap gap-2">

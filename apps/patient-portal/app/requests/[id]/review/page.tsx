@@ -11,6 +11,16 @@ type RequestDetail = {
   free_text: string;
   facts: Record<string, unknown>;
   status: string;
+  preferred_doctor: string | null;
+  preferred_time: string | null;
+  insurance_type: string | null;
+  insurance_provider: string | null;
+};
+
+const INSURANCE_LABELS: Record<string, string> = {
+  medicare: "Medicare",
+  private: "Private health insurance",
+  self_funded: "Self-funded / no cover",
 };
 
 type HistoryItem = {
@@ -78,6 +88,31 @@ export default function ReviewPage() {
         <div>
           <h2 className="text-sm font-semibold text-text-muted">Your description</h2>
           <p className="text-text-primary">{request.free_text}</p>
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-card border border-border bg-bg-surface p-6 shadow-sm">
+        <h2 className="text-sm font-semibold text-text-muted">Your booking</h2>
+        <div className="grid gap-3 sm:grid-cols-3 text-sm">
+          <div>
+            <p className="text-xs font-semibold uppercase text-text-muted">Doctor</p>
+            <p className="text-text-primary">{request.preferred_doctor || "No preference"}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-text-muted">Time</p>
+            <p className="text-text-primary">
+              {request.preferred_time
+                ? new Date(request.preferred_time).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+                : "Not chosen"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase text-text-muted">Cover</p>
+            <p className="text-text-primary">
+              {request.insurance_type ? INSURANCE_LABELS[request.insurance_type] || request.insurance_type : "Not provided"}
+              {request.insurance_provider && ` (${request.insurance_provider})`}
+            </p>
+          </div>
         </div>
       </section>
 

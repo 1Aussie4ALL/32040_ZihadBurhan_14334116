@@ -7,7 +7,7 @@ from careprior_shared.audit_client import record_audit_event
 from careprior_shared.auth_dep import require_roles
 
 from ..db import get_db
-from ..models import AppointmentRequest, QuestionResponse, StaffReview
+from ..models import AppointmentRequest, PatientProfile, QuestionResponse, StaffReview, User
 from ..schemas import QueueItem, ReviewDecisionIn, StaffReviewOut
 
 router = APIRouter(prefix="/api/v1/staff", tags=["staff"])
@@ -30,6 +30,10 @@ def review_queue(
         recommended_priority = rec.get("recommended_priority")
         if priority and recommended_priority != priority:
             continue
+        patient_profile = db.query(PatientProfile).filter(PatientProfile.id == r.patient_id).first()
+        patient_user = (
+            db.query(User).filter(User.id == patient_profile.user_id).first() if patient_profile else None
+        )
         items.append(
             QueueItem(
                 id=str(r.id),
@@ -40,6 +44,9 @@ def review_queue(
                 created_at=r.created_at,
                 submitted_at=r.submitted_at,
                 assigned_staff_id=r.assigned_staff_id,
+                preferred_doctor=r.preferred_doctor,
+                preferred_time=r.preferred_time,
+                patient_name=patient_user.full_name if patient_user else None,
             )
         )
     # Immediate Human Review first, then Priority Review, oldest first within each bucket.
@@ -72,6 +79,8 @@ def get_request_detail(
     reviews = (
         db.query(StaffReview).filter(StaffReview.request_id == req.id).order_by(StaffReview.created_at.asc()).all()
     )
+    patient_profile = db.query(PatientProfile).filter(PatientProfile.id == req.patient_id).first()
+    patient_user = db.query(User).filter(User.id == patient_profile.user_id).first() if patient_profile else None
     return {
         "id": str(req.id),
         "symptom_category": req.symptom_category,
@@ -79,6 +88,13 @@ def get_request_detail(
         "facts": req.facts,
         "status": req.status,
         "recommendation": req.recommendation,
+        "preferred_doctor": req.preferred_doctor,
+        "preferred_time": req.preferred_time.isoformat() if req.preferred_time else None,
+        "insurance_type": req.insurance_type,
+        "insurance_provider": req.insurance_provider,
+        "patient_name": patient_user.full_name if patient_user else None,
+        "patient_email": patient_user.email if patient_user else None,
+        "patient_phone": patient_profile.phone if patient_profile else None,
         "created_at": req.created_at.isoformat(),
         "submitted_at": req.submitted_at.isoformat() if req.submitted_at else None,
         "review_locked": req.review_locked,

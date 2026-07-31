@@ -80,7 +80,7 @@ export default function NewRequestPage() {
             className="focus-ring mt-1 w-full rounded-input border border-border px-3 py-2 text-sm"
           />
           <p className="mt-1 text-xs text-text-muted">
-            We'll ask a few follow-up questions so clinic staff have clearer information when reviewing your request.
+            We'll ask a few follow-up questions, then match you with a suitable doctor and appointment time.
           </p>
         </div>
         <Button type="submit" disabled={loading}>{loading ? "Continuing…" : "Continue"}</Button>

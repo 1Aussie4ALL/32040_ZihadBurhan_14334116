@@ -61,7 +61,25 @@ type RequestDetail = {
   review_locked: boolean;
   question_history: QuestionHistoryItem[];
   reviews: Review[];
+  preferred_doctor: string | null;
+  preferred_time: string | null;
+  insurance_type: string | null;
+  insurance_provider: string | null;
+  patient_name: string | null;
+  patient_email: string | null;
+  patient_phone: string | null;
 };
+
+const INSURANCE_LABELS: Record<string, string> = {
+  medicare: "Medicare",
+  private: "Private health insurance",
+  self_funded: "Self-funded / no cover",
+};
+
+function formatDateTime(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
 
 const PRIORITY_OPTIONS = [
   "Immediate Human Review",
@@ -145,14 +163,62 @@ function RequestDetailContent() {
         {rec && <StatusChip category={rec.recommended_priority} />}
       </div>
 
+      {rec && rec.recommended_priority === "Immediate Human Review" && !detail.review_locked && (
+        <div role="alert" className="rounded-input border border-status-immediate bg-status-immediate-bg px-4 py-3 text-sm text-status-immediate">
+          <p className="font-semibold">This request needs immediate attention.</p>
+          <p className="mt-1">
+            Consider calling the patient directly to bring their appointment forward, or advise them to attend
+            Emergency (or call 000) if their condition appears to be worsening. This is a prototype recommendation —
+            use clinical judgement.
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* LEFT PANEL */}
         <div className="space-y-4">
+          <Panel title="Patient details">
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Name</p>
+                <p className="text-text-primary">{detail.patient_name || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Email</p>
+                <p className="text-text-primary">{detail.patient_email || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Phone</p>
+                <p className="text-text-primary">{detail.patient_phone || "—"}</p>
+              </div>
+            </div>
+          </Panel>
+
           <Panel title="Patient-submitted information">
             <p className="text-sm text-text-muted">Category</p>
             <p className="mb-3 text-text-primary">{detail.symptom_category}</p>
             <p className="text-sm text-text-muted">Free-text description</p>
             <p className="text-text-primary">{detail.free_text}</p>
+          </Panel>
+
+          <Panel title="Booking details">
+            <div className="grid grid-cols-3 gap-2 text-sm">
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Doctor</p>
+                <p className="text-text-primary">{detail.preferred_doctor || "No preference"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Time</p>
+                <p className="text-text-primary">{formatDateTime(detail.preferred_time)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase text-text-muted">Cover</p>
+                <p className="text-text-primary">
+                  {detail.insurance_type ? INSURANCE_LABELS[detail.insurance_type] || detail.insurance_type : "—"}
+                  {detail.insurance_provider && ` (${detail.insurance_provider})`}
+                </p>
+              </div>
+            </div>
           </Panel>
 
           <Panel title="Question and answer history">

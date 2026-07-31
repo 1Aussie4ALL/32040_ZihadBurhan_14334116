@@ -62,6 +62,15 @@ class AppointmentRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     review_locked: Mapped[bool] = mapped_column(Boolean, default=False)
+    preferred_doctor: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    preferred_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    insurance_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    insurance_provider: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Best-effort AI read of the free text, captured at creation (before any structured
+    # answers exist). Used only to pre-fill a suggested default on follow-up questions —
+    # never written into `facts` directly, since rule-engine inputs must stay explicit
+    # patient-confirmed answers, never raw AI inference.
+    ai_preview: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class QuestionResponse(Base):

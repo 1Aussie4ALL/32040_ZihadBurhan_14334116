@@ -16,7 +16,15 @@ type QueueItem = {
   created_at: string;
   submitted_at: string | null;
   assigned_staff_id: string | null;
+  preferred_doctor: string | null;
+  preferred_time: string | null;
+  patient_name: string | null;
 };
+
+function formatPreferredTime(value: string | null): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
 
 function waitingMinutes(submittedAt: string | null): number | null {
   if (!submittedAt) return null;
@@ -98,7 +106,9 @@ function DashboardContent() {
           <thead className="text-xs uppercase text-text-muted">
             <tr>
               <th className="px-4 py-2">Request</th>
+              <th className="px-4 py-2">Patient</th>
               <th className="px-4 py-2">Category</th>
+              <th className="px-4 py-2">Preferred doctor / time</th>
               <th className="px-4 py-2">Recommended priority</th>
               <th className="px-4 py-2">Uncertainty</th>
               <th className="px-4 py-2">Waiting</th>
@@ -110,7 +120,12 @@ function DashboardContent() {
             {items.map((item) => (
               <tr key={item.id} className="border-t border-border">
                 <td className="px-4 py-3 font-mono text-xs text-text-secondary">{item.id.slice(0, 8)}</td>
+                <td className="px-4 py-3 text-text-secondary">{item.patient_name || "—"}</td>
                 <td className="px-4 py-3">{item.symptom_category}</td>
+                <td className="px-4 py-3 text-text-secondary">
+                  {item.preferred_doctor || "—"}
+                  {item.preferred_time && <span className="block text-xs">{formatPreferredTime(item.preferred_time)}</span>}
+                </td>
                 <td className="px-4 py-3"><StatusChip category={item.recommended_priority} /></td>
                 <td className="px-4 py-3 capitalize text-text-secondary">{item.uncertainty_level || "—"}</td>
                 <td className="px-4 py-3 text-text-secondary">
@@ -125,7 +140,7 @@ function DashboardContent() {
               </tr>
             ))}
             {items.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-6 text-center text-text-muted">No requests yet.</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-text-muted">No requests yet.</td></tr>
             )}
           </tbody>
         </table>
