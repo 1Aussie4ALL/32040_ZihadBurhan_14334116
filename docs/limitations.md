@@ -13,6 +13,19 @@ This section exists so nobody — including us — overstates what this prototyp
   brief only.
 - **No real-world patient testing has occurred.** Every patient, doctor, and appointment in this
   system is synthetic.
+- **The reported accuracy measures self-consistency, not clinical validity.** The system scores
+  100% against its own 26 scenarios, but those scenarios were written to exercise its own logic
+  paths and the expected urgencies are the author's labels, not a clinical gold standard. A
+  scenario set written by someone else would score differently. See
+  [`evaluation-results.md`](evaluation-results.md).
+- **The conventional-booking baselines are models, not measurements.** The keyword-triage baseline
+  in [`workflow-comparison.md`](workflow-comparison.md) scores according to how the scenario free
+  text happens to be worded, and those texts were written alongside this system. Real reception
+  staff also have a telephone, prior records, and the ability to ask a follow-up question — none
+  of which the baseline gets. It is a reference point, not evidence about real reception triage.
+- **No usability study was conducted.** The usability section of the evaluation report is a
+  heuristic evaluation carried out by the author against the running prototype, not findings from
+  real participants.
 - **AI classification may contain errors.** The mock provider is a deterministic heuristic
   standing in for a language model; a real model (Claude or otherwise) can misclassify, and its
   output is one input among several — never the sole basis for a decision.
@@ -50,6 +63,15 @@ This section exists so nobody — including us — overstates what this prototyp
   low-academic-value polish ahead of the core safety/triage/evaluation requirements.
 - **Single clinic, single location.** All doctors are seeded at the same fictional address; there
   is no multi-site or geolocation logic.
+
+## Assessment of what *is* built
+
+A structured assessment of the prototype's explainability, patient-safety hazards, privacy posture
+and security controls — including a hazard analysis table with residual risk ratings — is in
+[`safety-explainability-assessment.md`](safety-explainability-assessment.md). Its conclusion in
+short: the explainability and safety architecture are the strongest part of the build; the privacy
+and security posture is adequate for a local demo with synthetic data and not adequate for any real
+deployment.
 
 ## Production deployment would additionally require
 

@@ -1,0 +1,960 @@
+{
+  "runAt": "2026-09-16T08:55:07.736Z",
+  "aiProvider": "mock",
+  "system": {
+    "accuracy": 1,
+    "underTriageRate": 0,
+    "overTriageRate": 0,
+    "emergencyRecall": 1,
+    "urgentOrAboveRecall": 1,
+    "confusionMatrix": {
+      "Emergency": {
+        "Emergency": 6,
+        "Urgent": 0,
+        "Priority": 0,
+        "Routine": 0,
+        "InsufficientInformation": 0
+      },
+      "Urgent": {
+        "Emergency": 0,
+        "Urgent": 6,
+        "Priority": 0,
+        "Routine": 0,
+        "InsufficientInformation": 0
+      },
+      "Priority": {
+        "Emergency": 0,
+        "Urgent": 0,
+        "Priority": 5,
+        "Routine": 0,
+        "InsufficientInformation": 0
+      },
+      "Routine": {
+        "Emergency": 0,
+        "Urgent": 0,
+        "Priority": 0,
+        "Routine": 5,
+        "InsufficientInformation": 0
+      },
+      "InsufficientInformation": {
+        "Emergency": 0,
+        "Urgent": 0,
+        "Priority": 0,
+        "Routine": 0,
+        "InsufficientInformation": 4
+      }
+    },
+    "results": [
+      {
+        "scenarioId": "SCN-E01",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-002-CARDIAC-WARNING-CLUSTER"
+        ]
+      },
+      {
+        "scenarioId": "SCN-E02",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-001-SEVERE-BREATHING",
+          "SR-009-SEVERE-ACUTE-DETERIORATION",
+          "SR-019-CYANOSIS"
+        ]
+      },
+      {
+        "scenarioId": "SCN-E03",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-005-STROKE-LIKE"
+        ]
+      },
+      {
+        "scenarioId": "SCN-E04",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-007-ANAPHYLAXIS-SIGNS"
+        ]
+      },
+      {
+        "scenarioId": "SCN-E05",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-008-SELF-HARM-IMMINENT"
+        ]
+      },
+      {
+        "scenarioId": "SCN-U01",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-011-ABDOMINAL-BLEEDING"
+        ]
+      },
+      {
+        "scenarioId": "SCN-U02",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-012-NEUROVASCULAR-COMPROMISE"
+        ]
+      },
+      {
+        "scenarioId": "SCN-U03",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-013-SELF-HARM-SOMETIMES"
+        ]
+      },
+      {
+        "scenarioId": "SCN-U04",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-014-PERSISTENT-VOMITING-FEVER"
+        ]
+      },
+      {
+        "scenarioId": "SCN-U05",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-015-HIGH-FEVER-PROLONGED"
+        ]
+      },
+      {
+        "scenarioId": "SCN-P01",
+        "expectedUrgency": "Priority",
+        "systemUrgency": "Priority",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-P02",
+        "expectedUrgency": "Priority",
+        "systemUrgency": "Priority",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-P03",
+        "expectedUrgency": "Priority",
+        "systemUrgency": "Priority",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-P04",
+        "expectedUrgency": "Priority",
+        "systemUrgency": "Priority",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-P05",
+        "expectedUrgency": "Priority",
+        "systemUrgency": "Priority",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-R01",
+        "expectedUrgency": "Routine",
+        "systemUrgency": "Routine",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-R02",
+        "expectedUrgency": "Routine",
+        "systemUrgency": "Routine",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-R03",
+        "expectedUrgency": "Routine",
+        "systemUrgency": "Routine",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-R04",
+        "expectedUrgency": "Routine",
+        "systemUrgency": "Routine",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-R05",
+        "expectedUrgency": "Routine",
+        "systemUrgency": "Routine",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-I01",
+        "expectedUrgency": "InsufficientInformation",
+        "systemUrgency": "InsufficientInformation",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-I02",
+        "expectedUrgency": "InsufficientInformation",
+        "systemUrgency": "InsufficientInformation",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-I03",
+        "expectedUrgency": "InsufficientInformation",
+        "systemUrgency": "InsufficientInformation",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-I04",
+        "expectedUrgency": "InsufficientInformation",
+        "systemUrgency": "InsufficientInformation",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-EDGE01",
+        "expectedUrgency": "Urgent",
+        "systemUrgency": "Urgent",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": []
+      },
+      {
+        "scenarioId": "SCN-EDGE02",
+        "expectedUrgency": "Emergency",
+        "systemUrgency": "Emergency",
+        "correct": true,
+        "underTriaged": false,
+        "overTriaged": false,
+        "triggeredRules": [
+          "SR-008-SELF-HARM-IMMINENT"
+        ]
+      }
+    ]
+  },
+  "baselines": {
+    "noTriage": {
+      "model": "no_triage",
+      "totalScenarios": 26,
+      "correctCount": 5,
+      "accuracy": 0.19230769230769232,
+      "underTriageCount": 17,
+      "underTriageRate": 0.6538461538461539,
+      "overTriageCount": 4,
+      "overTriageRate": 0.15384615384615385,
+      "emergencyRecall": 0,
+      "urgentOrAboveRecall": 0,
+      "confusionMatrix": {
+        "Emergency": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 6,
+          "InsufficientInformation": 0
+        },
+        "Urgent": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 6,
+          "InsufficientInformation": 0
+        },
+        "Priority": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 5,
+          "InsufficientInformation": 0
+        },
+        "Routine": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 5,
+          "InsufficientInformation": 0
+        },
+        "InsufficientInformation": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 4,
+          "InsufficientInformation": 0
+        }
+      },
+      "results": [
+        {
+          "scenarioId": "SCN-E01",
+          "scenarioDescription": "Chest tightness radiating to the arm with sweating (cardiac warning cluster)",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-E02",
+          "scenarioDescription": "Severe breathing difficulty with bluish lips",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-E03",
+          "scenarioDescription": "Sudden one-sided weakness and slurred speech",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-E04",
+          "scenarioDescription": "Facial and throat swelling after a suspected reaction",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-E05",
+          "scenarioDescription": "Frequent thoughts of self-harm with a plan",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U01",
+          "scenarioDescription": "Abdominal pain with blood in vomit",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U02",
+          "scenarioDescription": "Ankle injury with numbness below the injury",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U03",
+          "scenarioDescription": "Occasional thoughts of self-harm, no specific plan",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U04",
+          "scenarioDescription": "Persistent vomiting with fever",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U05",
+          "scenarioDescription": "High fever for four days",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P01",
+          "scenarioDescription": "Worsening lower abdominal pain over several days",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P02",
+          "scenarioDescription": "Dull worsening chest ache, no red-flag features",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P03",
+          "scenarioDescription": "Spreading rash, no fever or breathing involvement",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P04",
+          "scenarioDescription": "Moderate breathing difficulty, worsening chest infection",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P05",
+          "scenarioDescription": "Ankle sprain, can't fully weight-bear, no numbness",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R01",
+          "scenarioDescription": "Mild cold symptoms, improving",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R02",
+          "scenarioDescription": "Mild, gradual-onset shoulder ache",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R03",
+          "scenarioDescription": "Small, stable rash, not spreading",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R04",
+          "scenarioDescription": "Routine annual check-up request",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R05",
+          "scenarioDescription": "Repeat prescription request",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I01",
+          "scenarioDescription": "Extremely vague concern, no structured answers given",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I02",
+          "scenarioDescription": "Abdominal complaint with almost no detail",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I03",
+          "scenarioDescription": "General request with no further detail",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I04",
+          "scenarioDescription": "Skin concern, almost no detail provided",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-EDGE01",
+          "scenarioDescription": "Contradictory: very high self-rated severity but described as improving",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-EDGE02",
+          "scenarioDescription": "Low self-rated severity, but a safety-critical answer is still present",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        }
+      ]
+    },
+    "keyword": {
+      "model": "keyword_triage",
+      "totalScenarios": 26,
+      "correctCount": 13,
+      "accuracy": 0.5,
+      "underTriageCount": 8,
+      "underTriageRate": 0.3076923076923077,
+      "overTriageCount": 5,
+      "overTriageRate": 0.19230769230769232,
+      "emergencyRecall": 0.8333333333333334,
+      "urgentOrAboveRecall": 0.75,
+      "confusionMatrix": {
+        "Emergency": {
+          "Emergency": 5,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 1,
+          "InsufficientInformation": 0
+        },
+        "Urgent": {
+          "Emergency": 0,
+          "Urgent": 4,
+          "Priority": 0,
+          "Routine": 2,
+          "InsufficientInformation": 0
+        },
+        "Priority": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 5,
+          "InsufficientInformation": 0
+        },
+        "Routine": {
+          "Emergency": 0,
+          "Urgent": 1,
+          "Priority": 0,
+          "Routine": 4,
+          "InsufficientInformation": 0
+        },
+        "InsufficientInformation": {
+          "Emergency": 0,
+          "Urgent": 0,
+          "Priority": 0,
+          "Routine": 4,
+          "InsufficientInformation": 0
+        }
+      },
+      "results": [
+        {
+          "scenarioId": "SCN-E01",
+          "scenarioDescription": "Chest tightness radiating to the arm with sweating (cardiac warning cluster)",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Emergency",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "chest tightness"
+          ]
+        },
+        {
+          "scenarioId": "SCN-E02",
+          "scenarioDescription": "Severe breathing difficulty with bluish lips",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Emergency",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "barely breathe"
+          ]
+        },
+        {
+          "scenarioId": "SCN-E03",
+          "scenarioDescription": "Sudden one-sided weakness and slurred speech",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Emergency",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "slurred"
+          ]
+        },
+        {
+          "scenarioId": "SCN-E04",
+          "scenarioDescription": "Facial and throat swelling after a suspected reaction",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Emergency",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "throat feels tight",
+            "swollen up"
+          ]
+        },
+        {
+          "scenarioId": "SCN-E05",
+          "scenarioDescription": "Frequent thoughts of self-harm with a plan",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Emergency",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "ending my life"
+          ]
+        },
+        {
+          "scenarioId": "SCN-U01",
+          "scenarioDescription": "Abdominal pain with blood in vomit",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Urgent",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "blood"
+          ]
+        },
+        {
+          "scenarioId": "SCN-U02",
+          "scenarioDescription": "Ankle injury with numbness below the injury",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Urgent",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "numb"
+          ]
+        },
+        {
+          "scenarioId": "SCN-U03",
+          "scenarioDescription": "Occasional thoughts of self-harm, no specific plan",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-U04",
+          "scenarioDescription": "Persistent vomiting with fever",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Urgent",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "can't keep",
+            "fever"
+          ]
+        },
+        {
+          "scenarioId": "SCN-U05",
+          "scenarioDescription": "High fever for four days",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Urgent",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": [
+            "temperature"
+          ]
+        },
+        {
+          "scenarioId": "SCN-P01",
+          "scenarioDescription": "Worsening lower abdominal pain over several days",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P02",
+          "scenarioDescription": "Dull worsening chest ache, no red-flag features",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P03",
+          "scenarioDescription": "Spreading rash, no fever or breathing involvement",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P04",
+          "scenarioDescription": "Moderate breathing difficulty, worsening chest infection",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-P05",
+          "scenarioDescription": "Ankle sprain, can't fully weight-bear, no numbness",
+          "expectedUrgency": "Priority",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R01",
+          "scenarioDescription": "Mild cold symptoms, improving",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R02",
+          "scenarioDescription": "Mild, gradual-onset shoulder ache",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R03",
+          "scenarioDescription": "Small, stable rash, not spreading",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R04",
+          "scenarioDescription": "Routine annual check-up request",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Routine",
+          "correct": true,
+          "underTriaged": false,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-R05",
+          "scenarioDescription": "Repeat prescription request",
+          "expectedUrgency": "Routine",
+          "baselineUrgency": "Urgent",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": [
+            "blood"
+          ]
+        },
+        {
+          "scenarioId": "SCN-I01",
+          "scenarioDescription": "Extremely vague concern, no structured answers given",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I02",
+          "scenarioDescription": "Abdominal complaint with almost no detail",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I03",
+          "scenarioDescription": "General request with no further detail",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-I04",
+          "scenarioDescription": "Skin concern, almost no detail provided",
+          "expectedUrgency": "InsufficientInformation",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": false,
+          "overTriaged": true,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-EDGE01",
+          "scenarioDescription": "Contradictory: very high self-rated severity but described as improving",
+          "expectedUrgency": "Urgent",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        },
+        {
+          "scenarioId": "SCN-EDGE02",
+          "scenarioDescription": "Low self-rated severity, but a safety-critical answer is still present",
+          "expectedUrgency": "Emergency",
+          "baselineUrgency": "Routine",
+          "correct": false,
+          "underTriaged": true,
+          "overTriaged": false,
+          "matchedPhrases": []
+        }
+      ]
+    }
+  },
+  "completeness": {
+    "conventionalMeanFields": 1,
+    "systemMeanFields": 7.961538461538462,
+    "multiplier": 7.961538461538462,
+    "scenariosWithRiskIndicators": 11
+  }
+}

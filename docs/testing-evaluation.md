@@ -2,7 +2,7 @@
 
 ## Automated test suite
 
-`npm run test` (Vitest). 47 tests across 8 files, all logic-level (no browser required):
+`npm run test` (Vitest). 74 tests across 10 files. Most are logic-level (no browser required); one file runs against a real database.
 
 | File | Covers |
 |---|---|
@@ -13,13 +13,20 @@
 | `tests/aiProvider.test.ts` | Mock provider: insufficient-information detection, schema-valid output on every call, urgency increasing with severity/worsening, and that a malformed AI response is rejected by the schema. |
 | `tests/evaluation.test.ts` | Runs **all 26 synthetic scenarios** through the live pipeline; asserts zero under-triage on Emergency scenarios, confusion-matrix/summary internal consistency, and an overall accuracy regression guard. |
 | `tests/answerValidation.test.ts` | The structured-answer guardrail: out-of-range scale values, wrong-typed booleans and unoffered select options are rejected rather than coerced; another category's answers are dropped; and neither a foreign follow-up question nor a foreign category's emergency rule can be reached from stale answers. |
+| `tests/baselineComparison.test.ts` | The conventional-booking baselines and the information-completeness metric that back `evaluation-results.md` — including that keyword triage cannot grade severity, cannot express "insufficient information", and misses the scenario whose risk appears only in a structured answer. |
+| `tests/booking.integration.test.ts` | **Integration, against a real SQLite database**: the full `submitAppointmentRequest` transaction, structured answers surviving the JSON round-trip, slot claiming (including double-booking and wrong-doctor rejection), stale cross-category answers being excluded from storage, urgency-ordered queue, clinician override + audit attribution, and review idempotency. |
 | `tests/UrgencyBadge.test.tsx` | One component-level test (React Testing Library) confirming urgency is always rendered as visible text, not colour alone. |
 
-Additionally, a one-off integration smoke test (not kept in the repo, run manually during
-development) exercised the real database path end-to-end: `submitAppointmentRequest` →
-transaction commit → slot marked booked → appears in `getClinicianQueue` → `submitClinicianReview`
-override + mark-reviewed → audit log entries present. This is the same code path the UI's server
-actions call.
+### Integration tests and the test database
+
+`tests/booking.integration.test.ts` runs against a real SQLite database rather than mocks, so it
+covers what the unit tests deliberately leave out: the Prisma transaction, slot claiming under
+contention, JSON round-tripping of structured answers, and the audit trail. This is the same code
+path the UI's server actions call.
+
+`tests/globalSetup.ts` creates a disposable `prisma/test.db` via `prisma db push --force-reset`
+and seeds doctors, slots and a clinician into it. The demo `prisma/dev.db` is never touched, and
+the test database is deleted afterwards. No extra setup is needed — `npm run test` handles it.
 
 ## Evaluation framework
 
@@ -57,6 +64,23 @@ matrix and per-scenario breakdown.
 booking ("Reason: stomach pain") against what this system captures for the same scenario
 (complaint, duration, severity, progression, associated symptoms, risk indicators) — demonstrating
 project value beyond raw classification accuracy, as the brief requests.
+
+## Headless evaluation runner
+
+```bash
+npm run evaluate
+```
+
+Runs all 26 scenarios through the real pipeline, runs the same scenarios through both
+conventional-booking baselines, measures information completeness, and regenerates
+[`evaluation-results.md`](evaluation-results.md) and `evaluation-results.json` from the numbers it
+just produced. Nothing in that report is typed by hand, so it cannot drift from what the code
+actually does. Unlike `/clinician/evaluation`, it does not touch the database, so it runs from a
+clean checkout.
+
+See also [`workflow-comparison.md`](workflow-comparison.md) for the workflow-level comparison
+(work package 6.4) and [`safety-explainability-assessment.md`](safety-explainability-assessment.md)
+for the explainability, privacy, security and patient-safety assessment (work package 6.6).
 
 ## Demo scenarios A–E
 

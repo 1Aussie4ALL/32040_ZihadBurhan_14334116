@@ -134,13 +134,17 @@ provider works and how to switch to a real Anthropic model.
 ```bash
 npm run test         # runs the full Vitest suite once
 npm run test:watch   # watch mode
+npm run evaluate     # regenerates docs/evaluation-results.md from a live pipeline run
 ```
 
-47 tests cover the safety rule engine, the urgency-merge logic (including "AI can never
+74 tests cover the safety rule engine, the urgency-merge logic (including "AI can never
 downgrade a safety rule"), adaptive question selection and its category scoping, structured-answer
 validation against the question bank, appointment-timing guidance, the mock AI provider and its
-schema validation, AI-outage fallback behaviour, and a full run of all 26 synthetic scenarios
-through the live pipeline. See [`docs/testing-evaluation.md`](docs/testing-evaluation.md).
+schema validation, AI-outage fallback behaviour, the conventional-booking baselines, and a full
+run of all 26 synthetic scenarios through the live pipeline. One file
+(`tests/booking.integration.test.ts`) runs against a real SQLite database covering the full
+submission transaction, slot claiming, the clinician queue and the audit trail; it creates and
+disposes of its own test database, so no setup is required. See [`docs/testing-evaluation.md`](docs/testing-evaluation.md).
 
 ### Type checking & build
 
@@ -187,13 +191,37 @@ A–E (Routine, Priority, Emergency, Insufficient Information, AI failure).
 
 ## 8. Research evaluation method
 
-`/clinician/evaluation` runs every synthetic scenario (`src/data/scenarios.ts`) through the real,
-live triage pipeline and computes: overall accuracy, under-triage rate (system urgency below
-expected — the more clinically important error), over-triage rate, and a full confusion matrix.
-Results are persisted (`EvaluationRun` / `EvaluationResult` tables) so past runs aren't lost. It
-also includes a side-by-side comparison of what a traditional single-field booking form captures
-versus what this system captures for the same scenario. See
-[`docs/testing-evaluation.md`](docs/testing-evaluation.md).
+Two ways to run it:
+
+- **`/clinician/evaluation`** runs every synthetic scenario (`src/data/scenarios.ts`) through the
+  real, live triage pipeline and computes overall accuracy, under-triage rate (system urgency
+  below expected — the more clinically important error), over-triage rate, and a full confusion
+  matrix. Results are persisted (`EvaluationRun` / `EvaluationResult` tables) so past runs aren't
+  lost, and the page shows a side-by-side comparison of what a traditional single-field booking
+  form captures versus what this system captures for the same scenario.
+- **`npm run evaluate`** does the same headlessly, plus the baseline comparison and completeness
+  metrics, and regenerates [`docs/evaluation-results.md`](docs/evaluation-results.md) from the run.
+  Every number in that report is produced by the code, not typed by hand.
+
+### Headline results
+
+All three workflows scored over the same 26 scenarios
+([full report](docs/evaluation-results.md)):
+
+| Workflow | Accuracy | Under-triage | Emergency recall |
+|---|---|---|---|
+| Conventional — no triage | 19.2% | 65.4% | 0.0% |
+| Conventional — keyword triage | 50.0% | 30.8% | 83.3% |
+| **This system** | **100.0%** | **0.0%** | **100.0%** |
+
+Information completeness: **8.0 clinical data points per request versus 1.0** for a conventional
+free-text form.
+
+**Read the 100% correctly.** The 26 scenarios were written to exercise this system's own logic
+paths and the expected urgencies are the author's labels, not a clinical gold standard — so that
+figure measures self-consistency, not clinical validity. The comparison against the baselines is
+the informative part, and its limits are stated in
+[`docs/workflow-comparison.md`](docs/workflow-comparison.md).
 
 ## 9. Limitations
 
@@ -213,7 +241,9 @@ src/
   types/            central shared TypeScript types
 prisma/             schema.prisma, migrations/, seed.ts
 tests/              Vitest unit + integration-style tests
-docs/               architecture, triage-framework, ai-design, privacy-security, testing-evaluation, limitations
+docs/               architecture, triage-framework, ai-design, privacy-security, testing-evaluation,
+                    evaluation-results, workflow-comparison, safety-explainability-assessment, limitations
+scripts/            headless evaluation runner (npm run evaluate)
 _archive/           an earlier microservices-based build of this project, preserved for reference (see its ARCHIVE-NOTE.md)
 ```
 
