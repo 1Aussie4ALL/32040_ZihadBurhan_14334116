@@ -1,0 +1,229 @@
+// AI-Assisted Healthcare Appointment Request Triage System
+// Academic prototype — synthetic data only. See /docs/privacy-security.md.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Patients & appointment requests
+// ---------------------------------------------------------------------------
+
+model Patient {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  sex         String? // optional, clinically relevant only — never required
+  phone       String
+  email       String
+  createdAt   DateTime @default(now())
+
+  appointmentRequests AppointmentRequest[]
+}
+
+model AppointmentRequest {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+
+  category    String // broad complaint category selected in Step 2
+  concernText String // free-text description of the main concern
+
+  status      String   @default("submitted") // submitted | reviewed
+
+  selectedDoctorId String?
+  selectedDoctor   Doctor?          @relation(fields: [selectedDoctorId], references: [id])
+  appointmentSlotId String?         @unique
+  appointmentSlot  AppointmentSlot? @relation(fields: [appointmentSlotId], references: [id])
+
+  insuranceType String? // medicare | private | self_funded | unsure
+
+  // Appointment-time guidance (section 12)
+  timingAppropriate    Boolean?
+  timingMessage        String?
+  proceedDespiteWarning Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  answers            PatientAnswer[]
+  triageAssessment   TriageAssessment?
+  safetyRuleResults  SafetyRuleResult[]
+  clinicianReview    ClinicianReview?
+  auditLogs          SystemAuditLog[]
+}
+
+model PatientAnswer {
+  id                   String   @id @default(cuid())
+  appointmentRequestId String
+  appointmentRequest   AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade)
+
+  questionId   String // references the static question bank in src/data/questions.ts
+  questionText String // snapshot of the question text at time of asking
+  answerValue  String // JSON-encoded value (string | number | boolean | string[])
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Triage
+// ---------------------------------------------------------------------------
+
+model TriageAssessment {
+  id                       String  @id @default(cuid())
+  appointmentRequestId     String  @unique
+  appointmentRequest       AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade)
+
+  urgencyLevel             String // Emergency | Urgent | Priority | Routine | InsufficientInformation
+  reasoningSummary         String // JSON string[]
+  triggeredRules           String // JSON string[] of ruleIds
+  riskIndicators           String // JSON string[]
+  missingInformation       String // JSON string[]
+  recommendedTimeframe     String
+  recommendedClinicianType String
+  aiSummary                String
+  aiConfidence             Float
+  finalSource              String // safety_rule | ai | ai_unavailable_fallback
+  requiresHumanReview      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+model SafetyRuleResult {
+  id                    String  @id @default(cuid())
+  appointmentRequestId  String
+  appointmentRequest    AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade)
+
+  ruleId      String
+  triggered   Boolean
+  severity    String
+  explanation String
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Doctors & appointments
+// ---------------------------------------------------------------------------
+
+model Doctor {
+  id               String   @id @default(cuid())
+  name             String
+  specialty        String
+  qualifications   String
+  areasOfInterest  String // JSON string[]
+  clinicLocation   String
+  bio              String
+  avatarInitials   String
+  avatarColor      String
+
+  appointmentSlots    AppointmentSlot[]
+  appointmentRequests AppointmentRequest[]
+}
+
+model AppointmentSlot {
+  id              String   @id @default(cuid())
+  doctorId        String
+  doctor          Doctor   @relation(fields: [doctorId], references: [id])
+  startTime       DateTime
+  durationMinutes Int      @default(15)
+  isBooked        Boolean  @default(false)
+
+  appointmentRequest AppointmentRequest?
+}
+
+// ---------------------------------------------------------------------------
+// Clinician / reception side
+// ---------------------------------------------------------------------------
+
+model Clinician {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("clinician") // clinician | reception
+  createdAt    DateTime @default(now())
+
+  sessions         Session[]
+  clinicianReviews ClinicianReview[]
+}
+
+model Session {
+  id          String   @id @default(cuid())
+  clinicianId String
+  clinician   Clinician @relation(fields: [clinicianId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+}
+
+model ClinicianReview {
+  id                    String   @id @default(cuid())
+  appointmentRequestId  String   @unique
+  appointmentRequest    AppointmentRequest @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade)
+
+  clinicianId    String?
+  clinician      Clinician? @relation(fields: [clinicianId], references: [id])
+
+  reviewed       Boolean  @default(false)
+  overrideUrgency String?
+  overrideReason  String?
+  note            String?
+  reviewedAt      DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail
+// ---------------------------------------------------------------------------
+
+model SystemAuditLog {
+  id                    String   @id @default(cuid())
+  appointmentRequestId  String?
+  appointmentRequest    AppointmentRequest? @relation(fields: [appointmentRequestId], references: [id], onDelete: Cascade)
+
+  eventType   String
+  description String
+  metadata    String? // JSON
+  actor       String  @default("system")
+
+  createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Evaluation framework (section 27)
+// ---------------------------------------------------------------------------
+
+model EvaluationRun {
+  id               String   @id @default(cuid())
+  runAt            DateTime @default(now())
+  totalScenarios   Int
+  correctCount     Int
+  accuracy         Float
+  underTriageCount Int
+  overTriageCount  Int
+
+  results EvaluationResult[]
+}
+
+model EvaluationResult {
+  id              String   @id @default(cuid())
+  evaluationRunId String
+  evaluationRun   EvaluationRun @relation(fields: [evaluationRunId], references: [id], onDelete: Cascade)
+
+  scenarioId          String
+  scenarioDescription String
+  expectedUrgency     String
+  systemUrgency       String
+  correct             Boolean
+  underTriaged        Boolean
+  overTriaged         Boolean
+  triggeredRules      String // JSON string[]
+  aiResult            String // JSON
+  finalResult         String // JSON
+}

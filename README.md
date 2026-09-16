@@ -1,212 +1,224 @@
-# CarePrior
+# AI-Assisted Healthcare Appointment Request Triage System
 
-**AI-assisted intake. Human-led decisions.**
+**Meridian Health Clinic** — an academic prototype for a university Industry Project.
 
-> **32040 Industry Project** — Spring 2026 — University of Technology Sydney — Master of Information Technology
-> Project title: *Design and Evaluation of an Explainable, Human-Supervised AI Clinical Intake and Prioritisation Platform for Primary Healthcare*
-
-> ⚠️ **This software is an academic research prototype.** It is not a medical device and has not been clinically
-> validated. It must not be used to diagnose, treat, prevent or manage any medical condition, and must not be
-> relied upon for real patient triage or emergency decision-making. All outputs require review by appropriately
-> qualified healthcare professionals. **All data used is synthetic and fictional.** In a real emergency in Australia, call **Triple Zero (000)**.
+> ⚠️ **This is an academic prototype, not a production medical device.** It does not diagnose,
+> does not provide medical advice, and does not replace a healthcare professional. Deterministic
+> emergency/red-flag rules always take precedence over AI output. All data is synthetic/demo data.
+> In a real emergency in Australia, call **000**.
 
 ---
 
-## 1. Overview
+## 1. Project overview
 
-CarePrior is a human-supervised, hybrid AI + deterministic-rule clinical intake and prioritisation prototype for
-primary-care appointment requests. It investigates whether adaptive questioning, explainable AI, deterministic
-safety rules, and mandatory human review can produce more consistent prioritisation than a static intake form —
-without ever diagnosing, prescribing, or acting autonomously.
+Traditional online appointment booking collects almost nothing — usually a single free-text
+"reason for visit" field — before a patient is added to a queue. This prototype explores whether
+a hybrid system can do meaningfully better *without* attempting to diagnose anyone:
 
-See [docs/project-management/phase-1-discovery.md](docs/project-management/phase-1-discovery.md) for the full
-architecture rationale, assumptions, and scope decisions behind this build.
+1. Collect **structured, adaptive** information about a patient's concern (not a fixed form).
+2. Run it through **deterministic, always-on safety rules** first.
+3. Layer an **AI-assisted assessment** on top, which can raise urgency but can never lower it
+   below whatever the safety rules already decided.
+4. Turn the result into an **urgency level, a plain-language explanation, a suggested clinician,
+   and a suggested appointment timeframe**.
+5. Give the clinician a **structured pre-consultation summary** and require them to review every
+   single request — regardless of urgency — before it's treated as final.
 
 ## 2. Problem statement
 
-Practices and telehealth providers receive appointment requests with vague, incomplete, or inconsistent
-descriptions, reviewed by staff who may have limited clinical training and little time. Static forms collect the
-same fields from everyone regardless of situation. CarePrior asks whether a hybrid system — deterministic safety
-rules that can never be overridden by AI, combined with AI-assisted interpretation and adaptive follow-up
-questions — can flag requests needing earlier human attention more consistently, while remaining fully explainable
-and auditable.
+Patients under-describe their symptoms in free-text booking forms; reception/clinical staff have
+to triage from very little information, under time pressure. This project asks: does collecting
+richer, adaptively-selected structured information, combined with a safety-first hybrid
+AI/rules architecture, produce more useful and more consistent appointment prioritisation than a
+static form — while remaining fully explainable, auditable, and never autonomous?
 
-## 3. What's implemented in this build
+## 3. Architecture
 
-This is a **full vertical slice**: the complete brief case-study scenario (vague symptom description → adaptive
-follow-up questions → chest-pain/sweating/arm-radiation disclosure → deterministic immediate-review rule trigger →
-staff review with explanation → accept/override → append-only audit trail) works end-to-end through every
-architectural service.
+Single Next.js application — no microservices, no Docker requirement, works fully offline with a
+mock AI provider. See [`docs/architecture.md`](docs/architecture.md) for full diagrams.
 
-- **6 backend services**, each an independent FastAPI deployable unit: `api` (auth/RBAC + orchestration),
-  `ai-service` (mock AI provider), `rule-engine` (deterministic prototype rules), `prioritisation-service`
-  (combination + precedence), `audit-service` (append-only log), `notification-service` (in-app staff alerts).
-- **2 frontend apps**: `patient-portal` (Next.js) and `staff-dashboard` (Next.js), styled to the CarePrior brand
-  tokens (Deep Teal palette, Inter typeface, status chips that never rely on colour alone).
-- **Single shared PostgreSQL instance**, schema-per-service (`api`, `rules`, `audit`, `notification`), so each
-  service owns its own tables without a shared database class.
-- **Full RBAC** across 6 seeded demo accounts (patient, reception, nurse, manager, admin, researcher).
-- **Deterministic rule engine** with 8 prototype rules (AND/OR/nested conditions, severity, precedence),
-  including the exact cardiac warning cluster from the brief's case study.
-- **Mock AI provider** behind a swappable `AIProvider` interface — deterministic, free, reproducible; a real
-  Anthropic/OpenAI adapter can be added later without touching domain logic.
-- **Prioritisation precedence**: deterministic rule outcomes can never be downgraded by AI; AI failure or low
-  confidence routes to *Manual Review Required*, never silently to *Routine Review*.
-- **Append-only audit log**, staff review queue, accept/override (mandatory reason)/escalate/request-information
-  workflow, and an audit explorer screen.
-
-### Deferred beyond this build (see §7)
-
-`research-console` (4th app / research-evaluation mode comparison), the full 46-screen and 40–60 FR breadth, the
-30-scenario synthetic library, Redis/queues, Alembic migrations (currently `create_all` on startup), and granular
-Role/Permission/UserRole tables (currently a single `role` column on `User`) are documented, deliberate scope
-reductions for this build pass — not oversights. See the discovery doc for the full rationale.
-
-## 4. Architecture
-
-```mermaid
-flowchart LR
-    P[Patient Portal :3000] -->|HTTPS| API[api :8000]
-    S[Staff Dashboard :3001] -->|HTTPS| API
-    API --> RULE[rule-engine :8002]
-    API --> AI[ai-service :8003]
-    API --> PRI[prioritisation-service :8004]
-    PRI --> RULE
-    PRI --> AI
-    API --> AUDIT[audit-service :8001]
-    API --> NOTIF[notification-service :8005]
-    RULE --> PG[(PostgreSQL)]
-    AUDIT --> PG
-    NOTIF --> PG
-    API --> PG
+```
+Patient Interface  →  Booking Flow  →  Adaptive Question Engine
+                                              ↓
+                                     Safety Rule Engine (Layer 1, deterministic)
+                                              ↓
+                                     AI Assessment Service (Layer 2, mock or Claude)
+                                              ↓
+                                     Triage Decision Engine (safety floor + AI, never downgraded)
+                                              ↓
+                              Appointment Recommendation + Timing Guidance
+                                              ↓
+                                     Clinician Dashboard (review, override, audit)
 ```
 
-`prioritisation-service` is stateless — it calls `rule-engine` and `ai-service` itself and returns a combined
-recommendation, which `api` persists against the appointment request.
+Key design rule (section 28 of the build brief): **deterministic emergency rule → urgency safety
+rules → structured AI assessment → application validation → final triage recommendation → human
+clinician review.** The AI can never override or downgrade a triggered safety rule.
 
-## 5. Running locally
+## 4. Technology stack
+
+| Layer | Choice |
+|---|---|
+| Frontend | Next.js 16 (App Router), React 19, TypeScript (strict), Tailwind CSS 4 |
+| Backend | Next.js server actions / route handlers (no separate API service) |
+| Database | SQLite via Prisma ORM |
+| Validation | Zod (server-side, at every form/action boundary) |
+| Auth | Cookie-based session for the clinician dashboard, bcrypt-hashed passwords |
+| AI | Provider abstraction — `MockAIProvider` (default) and `ClaudeAIProvider` (optional) |
+| Testing | Vitest, React Testing Library |
+| Icons | lucide-react |
+
+Full rationale: [`docs/architecture.md`](docs/architecture.md).
+
+## 5. Setup instructions
 
 ### Prerequisites
+- Node.js 20+
+- npm
 
-- **Docker Desktop** (or compatible Docker Engine + Compose v2) — this build was developed and logic-tested in a
-  sandbox without Docker available, so **you must run `docker compose up` yourself on a machine with Docker
-  installed** to see it live. Every service was individually validated (see §6) but the full container network
-  has not yet been exercised end-to-end by a live `docker compose up` run.
-
-### Steps
+### Install & configure
 
 ```bash
-git clone <this repo>
-cd 32040_ZihadBurhan_14334116
-cp .env.example .env        # defaults work for local dev — replace JWT_SECRET for anything beyond localhost
-docker compose up --build
+npm install
+cp .env.example .env
 ```
 
-This starts Postgres and all 6 backend services, then the two frontends:
+`.env` defaults are demo-safe out of the box:
 
-| App | URL |
+```bash
+DATABASE_URL="file:./dev.db"
+AI_PROVIDER=mock          # "mock" (default, no API key needed) or "claude"
+ANTHROPIC_API_KEY=        # only required if AI_PROVIDER=claude
+SESSION_SECRET=dev-only-insecure-secret-change-me
+```
+
+### Database setup
+
+```bash
+npm run db:migrate     # creates the SQLite schema (already applied once as "init")
+npm run db:seed        # seeds doctors, appointment availability, and clinician demo accounts
+```
+
+(`npm run db:migrate` also runs the seed automatically the first time, via the `prisma.seed`
+config in `package.json`.) Re-run `npm run db:seed` any time to reset demo data — it clears and
+re-inserts everything, including regenerating fresh future appointment slots.
+
+### Running locally
+
+```bash
+npm run dev
+```
+
+Visit `http://localhost:3000`.
+
+| Area | URL |
 |---|---|
-| Patient portal | http://localhost:3000 |
-| Staff dashboard | http://localhost:3001 |
-| API (Swagger docs) | http://localhost:8000/docs |
+| Patient site | http://localhost:3000 |
+| Book an appointment | http://localhost:3000/book |
+| Clinician / reception login | http://localhost:3000/clinician/login |
 
-First boot takes longer (image builds + `npm install` inside containers). Subsequent `docker compose up` runs are
-fast. Each service creates its own Postgres schema and tables on startup — no manual migration step needed for
-this prototype.
+**Demo clinician logins** (seeded, password `TriageDemo!23` for both):
+- `clinician@meridianhealth.demo` (role: clinician)
+- `reception@meridianhealth.demo` (role: reception)
 
-### Demo accounts (password for all: `CarePriorDev!23`)
+### Mock AI mode
 
-| Role | Email |
-|---|---|
-| Patient | patient@careprior.local |
-| Reception | reception@careprior.local |
-| Nurse / Clinical Reviewer | clinician@careprior.local |
-| Practice Manager | manager@careprior.local |
-| System Administrator | admin@careprior.local |
-| Research Evaluator | researcher@careprior.local |
+The entire application — patient booking, triage, clinician dashboard, and the evaluation
+framework — works end-to-end with **zero external API calls** using `AI_PROVIDER=mock` (the
+default). This is deliberate: automated tests, demonstrations, and grading should never depend on
+API credits or network access. See [`docs/ai-design.md`](docs/ai-design.md) for how the mock
+provider works and how to switch to a real Anthropic model.
 
-Replace this password before any use beyond local development.
+### Testing
 
-### Demo script (the brief's case study)
+```bash
+npm run test         # runs the full Vitest suite once
+npm run test:watch   # watch mode
+```
 
-1. Log in to the patient portal as `patient@careprior.local`, grant consent.
-2. Create a request: category "Respiratory", description *"I have been feeling tired and slightly short of
-   breath."*
-3. Answer the adaptive follow-up questions — when asked, report **chest discomfort = yes**, **sweating = yes**,
-   **arm radiation = yes**.
-4. Submit. The recommendation (hidden internals) will show a request for immediate staff attention.
-5. Log in to the staff dashboard as `clinician@careprior.local` — the request appears at the top of the queue as
-   **Immediate Human Review**, with the triggered rule, matched answers, and reasoning visible.
-6. Accept or override (override requires a reason) — then open **Audit explorer** to see the full append-only
-   trail: submission → AI interpretation → rule trigger → prioritisation → staff decision.
+47 tests cover the safety rule engine, the urgency-merge logic (including "AI can never
+downgrade a safety rule"), adaptive question selection and its category scoping, structured-answer
+validation against the question bank, appointment-timing guidance, the mock AI provider and its
+schema validation, AI-outage fallback behaviour, and a full run of all 26 synthetic scenarios
+through the live pipeline. See [`docs/testing-evaluation.md`](docs/testing-evaluation.md).
 
-### AI provider
+### Type checking & build
 
-`AI_PROVIDER=mock` by default (`.env.example`) — deterministic, no external calls, no cost. The `AIProvider`
-interface (`services/ai-service/app/providers/base.py`) allows a real Anthropic/OpenAI-compatible adapter to be
-added later without any change to domain logic in `prioritisation-service` or `api`.
+```bash
+npx tsc --noEmit
+npm run build
+```
 
-## 6. What has actually been tested (and how, given no Docker in the build environment)
+## 6. Safety design, in short
 
-This build was produced in a sandboxed environment **without Docker, Node, or a modern Python available
-system-wide**. Rather than skip verification, the following was done using portable, non-system-installed
-toolchains and removed afterwards:
+- **Layer 1 (deterministic, always runs first):** 19 configurable safety rules
+  (`src/data/safetyRules.ts`) check only explicit, patient-confirmed structured answers — never
+  free text, never AI inference. If an `emergency`-severity rule fires, the result is forced to
+  `Emergency` and the AI cannot change that, no matter what it suggests.
+- **Layer 2 (AI-assisted):** a schema-validated AI assessment (mock or Claude) suggests an
+  urgency level, reasoning, missing information, and a recommended clinician/timeframe. Its
+  output is always re-validated against a Zod schema before being trusted; a malformed or failed
+  response is treated as a service outage, never coerced into a fake result.
+- **Merge:** `src/lib/triage/engine.ts` combines both — the AI may raise urgency above a safety
+  floor, never below it. `requiresHumanReview` is always `true`.
+- **Outage handling:** if the AI is unavailable, safety rules still run in full; the result falls
+  back to the safety floor (or `Insufficient Information` if no rule fired), and is flagged for
+  full clinician review — the app never becomes unusable and never fabricates an AI opinion.
 
-- **Both Next.js apps** (`patient-portal`, `staff-dashboard`) were `npm install`ed and `next build`ed against a
-  portable Node 20 — both compile with **zero TypeScript errors** across all 13 routes.
-- **All 6 backend services** were import-checked under a portable Python 3.12 with the exact pinned
-  dependencies from each `requirements.txt` — all import cleanly (this caught and fixed a missing
-  `email-validator` dependency required by `EmailStr` in `api`, and a Pydantic protected-namespace warning).
-- **Every SQLAlchemy model** across the 4 database-backed services was compiled to real PostgreSQL DDL
-  (`CREATE TABLE …`) without a live database — confirms schemas, foreign keys, and JSON/UUID column types are
-  valid before you ever run `docker compose up`.
-- **The rule engine** was unit-tested directly: the case-study facts correctly trigger `RULE-CARDIAC-001` and
-  `RULE-SEVERE-WORSENING-001`; a routine low-risk case triggers nothing; the insufficient-information and
-  fainting rules fire independently.
-- **The mock AI provider** was unit-tested: correct symptom/severity extraction from free text, correct
-  incorporation of structured follow-up answers into risk indicators, and correct contradiction detection.
-- **The full prioritisation pipeline** was unit-tested with the network calls mocked: the case study resolves to
-  `Immediate Human Review`; a low-confidence/uncertain AI signal cannot downgrade a higher deterministic rule
-  outcome; an AI-service outage correctly routes to `Manual Review Required` rather than failing silently.
-- **Password hashing and JWT issuing/verification** were exercised directly and behave correctly.
+Full detail: [`docs/triage-framework.md`](docs/triage-framework.md).
 
-**Not yet tested**: an actual live `docker compose up` with real inter-container networking and a real Postgres
-instance, and the browser UI itself. Please run the demo script above and report anything that doesn't work —
-the logic underneath it has been verified, but container networking/env-var wiring is the one layer that could
-not be exercised in this environment.
+## 7. Demo flow (patient → clinician)
 
-## 7. Known limitations / deliberate scope reductions
+1. Go to `/book`. Enter demo patient details.
+2. Describe a concern — e.g. category **Cardiovascular**, "Sudden chest tightness spreading to my arm with sweating."
+3. Answer the adaptive questions — chest character, breathing difficulty, **radiation = yes**, **sweating = yes**.
+4. The assessment step should show **Emergency**, with the emergency banner and reasoning explained.
+5. Continue anyway (a real patient would be told to call 000; the request can still be logged).
+6. Pick a doctor and an appointment slot, then confirm.
+7. Log in to `/clinician/login` as `clinician@meridianhealth.demo`.
+8. The request appears at the top of the queue, flagged Emergency, with the triggered rule
+   (`SR-002-CARDIAC-WARNING-CLUSTER`) visible.
+9. Open it, review the full structured summary, optionally override, mark reviewed.
+10. Visit `/clinician/evaluation` and click **Run evaluation** to see accuracy, under/over-triage
+    rates, and a confusion matrix across all 26 synthetic scenarios.
 
-- No `research-console` app or 4-mode (Static/Rule-only/AI-only/Hybrid) evaluation harness yet — Phase 10 item.
-- `create_all()` on startup instead of Alembic migrations — fine for a prototype with no existing data to
-  migrate; documented hardening-phase item.
-- Single `role` column on `User` instead of full `Role`/`Permission`/`UserRole` tables.
-- 8 prototype rules and a 9-question adaptive library, not the full 40–60 FR / 30-scenario breadth from the
-  brief — this build is one complete vertical slice, deepened and widened in later phases.
-- No server-side JWT revocation/blacklisting (logout is client-side token discard only).
-- Adaptive questioning always asks its fixed question set; it does not yet skip questions the AI has already
-  inferred from free text with high confidence (a genuine future improvement, not a bug — deterministic rule
-  inputs intentionally come only from explicit structured patient answers, never from AI inference).
+See [`docs/testing-evaluation.md`](docs/testing-evaluation.md) for the full set of demo scenarios
+A–E (Routine, Priority, Emergency, Insufficient Information, AI failure).
 
-## 8. Repository structure
+## 8. Research evaluation method
 
-See [docs/project-management/phase-1-discovery.md](docs/project-management/phase-1-discovery.md) for the full
-target structure and the rationale for the `services/shared` addition.
+`/clinician/evaluation` runs every synthetic scenario (`src/data/scenarios.ts`) through the real,
+live triage pipeline and computes: overall accuracy, under-triage rate (system urgency below
+expected — the more clinically important error), over-triage rate, and a full confusion matrix.
+Results are persisted (`EvaluationRun` / `EvaluationResult` tables) so past runs aren't lost. It
+also includes a side-by-side comparison of what a traditional single-field booking form captures
+versus what this system captures for the same scenario. See
+[`docs/testing-evaluation.md`](docs/testing-evaluation.md).
 
-## 9. Research questions this platform is designed to support
+## 9. Limitations
 
-1. Can a hybrid AI + deterministic system identify requests needing earlier review more effectively than a
-   static form?
-2. Does adaptive questioning improve prioritisation over a static form?
-3. Do explanations improve staff understanding of AI-generated recommendations?
-4. How should the system respond to incomplete, ambiguous, or contradictory information?
-5. How can automation bias / staff overreliance be reduced?
-6. How does hybrid compare with static-form / rule-only / AI-only modes?
-7. What privacy, security, governance and audit controls does a system like this need?
+This is a prototype built for an academic assessment, not a validated clinical tool. See
+[`docs/limitations.md`](docs/limitations.md) for the full, explicit list — including that the 19
+safety rules and 26 scenarios are illustrative, not exhaustive; there has been no real-world
+patient testing; and AI confidence is not clinical certainty.
 
-## 10. Disclaimer
+## 10. Repository layout
 
-This software is an academic research prototype. It is not a medical device and has not been clinically
-validated. It must not be used to diagnose, treat, prevent or manage any medical condition. It must not be relied
-upon for real patient triage or emergency decision-making. All outputs require review by appropriately qualified
-healthcare professionals. All patient data in this repository is synthetic.
+```
+src/
+  app/              Next.js routes (route groups: (site) = patient-facing, clinician/ = staff)
+  components/       patient/, clinician/, triage/, common/
+  lib/              ai/, triage/, safety/, questions/, validation/, database/, auth/, evaluation/
+  data/             doctors, questions, safetyRules, scenarios, categories, insurance (config, not hardcoded UI)
+  types/            central shared TypeScript types
+prisma/             schema.prisma, migrations/, seed.ts
+tests/              Vitest unit + integration-style tests
+docs/               architecture, triage-framework, ai-design, privacy-security, testing-evaluation, limitations
+_archive/           an earlier microservices-based build of this project, preserved for reference (see its ARCHIVE-NOTE.md)
+```
+
+## 11. Disclaimer (repeated deliberately — it matters)
+
+This prototype uses simulated information and is not intended for real patient data. It is not a
+medical device, has not been clinically validated, and must never be used for real patient
+triage, diagnosis, or emergency decision-making. In a real emergency in Australia, call **000**.
