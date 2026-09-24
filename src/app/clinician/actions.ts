@@ -2,7 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { loginClinician, logoutClinician, requireClinician } from "@/lib/auth/session";
+import {
+  getCurrentClinician,
+  loginClinician,
+  loginDemoReception,
+  logoutClinician,
+  requireClinician,
+} from "@/lib/auth/session";
 import { clinicianLoginSchema, clinicianOverrideSchema } from "@/lib/validation/schemas";
 import { submitClinicianReview } from "@/lib/database/requests";
 import { runAndPersistEvaluation } from "@/lib/evaluation/runner";
@@ -19,6 +25,16 @@ export async function loginAction(
   const result = await loginClinician(parsed.data.email, parsed.data.password);
   if (!result.success) return { success: false, error: result.error };
   return { success: true };
+}
+
+/**
+ * The "Reception" side of the view switcher. Already signed in: straight to the
+ * dashboard. Otherwise, under `next dev` only, sign in as the demo receptionist;
+ * anywhere else, fall back to the normal login page.
+ */
+export async function switchToReceptionAction(): Promise<void> {
+  const signedIn = (await getCurrentClinician()) !== null || (await loginDemoReception());
+  redirect(signedIn ? "/clinician/dashboard" : "/clinician/login");
 }
 
 export async function logoutAction(): Promise<void> {
