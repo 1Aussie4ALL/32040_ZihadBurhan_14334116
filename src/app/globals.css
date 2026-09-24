@@ -34,3 +34,61 @@ body {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* Validation: flash a field the user still needs to complete (see ValidationPrompt.tsx) */
+@keyframes field-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(220 38 38 / 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgb(220 38 38 / 0.6);
+    background-color: #fef2f2;
+  }
+}
+
+@keyframes field-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes validation-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+[data-flash] {
+  border-radius: 0.5rem;
+  animation:
+    field-shake 0.4s ease-in-out,
+    field-flash 0.7s ease-in-out 3;
+}
+
+.validation-pop {
+  animation: validation-pop 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-flash] {
+    animation: field-flash 0.7s ease-in-out 3;
+  }
+  .validation-pop {
+    animation: none;
+  }
+}

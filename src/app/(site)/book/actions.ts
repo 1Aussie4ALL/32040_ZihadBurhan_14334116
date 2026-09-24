@@ -5,6 +5,7 @@ import { getAvailableSlots } from "@/lib/database/doctors";
 import { submitAppointmentRequest, SlotUnavailableError } from "@/lib/database/requests";
 import { concernSchema, answerMapSchema, submitBookingSchema } from "@/lib/validation/schemas";
 import { validateAnswers } from "@/lib/validation/answers";
+import { explainBookingErrors, INVALID_ANSWERS_ERROR, type BookingFieldError } from "@/lib/validation/bookingErrors";
 import type { AnswerMap, ComplaintCategory, TriageResult, AppointmentSlotView } from "@/types";
 
 const INVALID_ANSWERS_MESSAGE =
@@ -50,15 +51,22 @@ export async function getAvailableSlotsAction(
 
 export async function submitBookingAction(
   input: unknown,
-): Promise<{ success: true; appointmentRequestId: string } | { success: false; error: string }> {
+): Promise<
+  | { success: true; appointmentRequestId: string }
+  | { success: false; error: string; fieldErrors?: BookingFieldError[] }
+> {
   const parsed = submitBookingSchema.safeParse(input);
   if (!parsed.success) {
-    return { success: false, error: "Some details are missing or invalid. Please review the form and try again." };
+    return {
+      success: false,
+      error: "Some details are missing or invalid. Please review the form and try again.",
+      fieldErrors: explainBookingErrors(input, parsed.error),
+    };
   }
 
   const checked = validateAnswers(parsed.data.category, parsed.data.answers as AnswerMap);
   if (checked.invalid.length > 0) {
-    return { success: false, error: INVALID_ANSWERS_MESSAGE };
+    return { success: false, error: INVALID_ANSWERS_MESSAGE, fieldErrors: [INVALID_ANSWERS_ERROR] };
   }
 
   try {

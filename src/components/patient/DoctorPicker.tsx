@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { MapPin } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { DoctorAvatar } from "@/components/common/DoctorAvatar";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
 import { DOCTORS } from "@/data/doctors";
 import { recommendDoctors } from "@/lib/triage/doctorMatch";
 import type { ComplaintCategory } from "@/types";
@@ -28,6 +29,12 @@ export function DoctorPicker({
 
   const [showAll, setShowAll] = useState(Boolean(initialDoctorId && !recommendedIds.has(initialDoctorId)));
   const [selected, setSelected] = useState<string | null>(initialDoctorId);
+  const prompt = useValidationPrompt();
+
+  function handleContinue() {
+    if (selected) onNext(selected);
+    else prompt.report([{ fieldId: "doctor-options", message: "Please choose a clinician to continue." }]);
+  }
 
   const visibleDoctors = showAll ? DOCTORS : recommended;
 
@@ -41,7 +48,7 @@ export function DoctorPicker({
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div id="doctor-options" className="grid gap-4 sm:grid-cols-2">
         {visibleDoctors.map((doctor) => (
           <button
             type="button"
@@ -82,10 +89,12 @@ export function DoctorPicker({
         <Button type="button" variant="outline" onClick={onBack}>
           Back
         </Button>
-        <Button type="button" disabled={!selected} onClick={() => selected && onNext(selected)}>
+        <Button type="button" onClick={handleContinue}>
           Continue
         </Button>
       </div>
+
+      <ValidationDialog {...prompt} />
     </div>
   );
 }

@@ -3,8 +3,28 @@
 import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
 import { getNextQuestion, isQuestionRequired } from "@/lib/questions/engine";
 import type { AnswerMap, AnswerValue, ComplaintCategory, QuestionDefinition } from "@/types";
+
+// Tells the patient exactly what this question needs, rather than a generic
+// "please answer" that doesn't say how.
+function unansweredMessage(question: QuestionDefinition): string {
+  switch (question.answerType) {
+    case "boolean":
+      return "Please choose Yes or No.";
+    case "single_select":
+      return "Please choose one of the options.";
+    case "multi_select": {
+      const none = question.options?.find((o) => o.value === "none");
+      return none ? `Please tick at least one option, or "${none.label}".` : "Please tick at least one option.";
+    }
+    case "scale":
+      return `Please move the slider to choose a number from ${question.scaleMin ?? 0} to ${question.scaleMax ?? 10}.`;
+    default:
+      return "Please answer this question to continue.";
+  }
+}
 
 export function QuestionFlow({
   category,
@@ -22,6 +42,7 @@ export function QuestionFlow({
   const [answers, setAnswers] = useState<AnswerMap>(initialAnswers);
   const [askedIds, setAskedIds] = useState<string[]>(initialAskedIds);
   const [error, setError] = useState<string | null>(null);
+  const prompt = useValidationPrompt();
 
   const currentQuestion = useMemo(
     () => getNextQuestion(category, answers, askedIds),
@@ -54,7 +75,9 @@ export function QuestionFlow({
     const answered =
       draft !== undefined && draft !== "" && !(Array.isArray(draft) && draft.length === 0);
     if (required && !answered) {
-      setError("Please answer this question to continue.");
+      const message = unansweredMessage(currentQuestion);
+      setError(message);
+      prompt.report([{ fieldId: "question-input", message }], { title: "Please answer this question" });
       return;
     }
     setAskedIds((prev) => [...prev, currentQuestion.questionId]);
@@ -93,7 +116,9 @@ export function QuestionFlow({
         {currentQuestion.helperText && <p className="mt-1 text-sm text-muted">{currentQuestion.helperText}</p>}
       </div>
 
-      <QuestionInput question={currentQuestion} value={draft} onChange={setDraft} />
+      <div id="question-input">
+        <QuestionInput question={currentQuestion} value={draft} onChange={setDraft} />
+      </div>
 
       {error && (
         <p role="alert" className="text-sm text-red-600">
@@ -109,6 +134,8 @@ export function QuestionFlow({
           Next
         </Button>
       </div>
+
+      <ValidationDialog {...prompt} />
     </div>
   );
 }
@@ -152,7 +179,10 @@ function QuestionInput({
   if (question.answerType === "scale") {
     const min = question.scaleMin ?? 0;
     const max = question.scaleMax ?? 10;
-    const current = typeof value === "number" ? value : Math.round((min + max) / 2);
+    // The thumb has to sit somewhere, but a midpoint the patient never chose must
+    // not look like an answer: show "not answered" until they actually set it.
+    const answered = typeof value === "number";
+    const current = answered ? value : Math.round((min + max) / 2);
     return (
       <div>
         <input
@@ -161,12 +191,20 @@ function QuestionInput({
           max={max}
           value={current}
           onChange={(e) => onChange(Number(e.target.value))}
+          // onChange doesn't fire when the patient taps the thumb where it already
+          // is, so commit on release too, or choosing the midpoint would be impossible.
+          onPointerUp={(e) => onChange(Number(e.currentTarget.value))}
           className="w-full accent-teal-700"
           aria-label={question.questionText}
+          aria-valuetext={answered ? String(current) : "Not answered yet"}
         />
         <div className="mt-2 flex items-center justify-between text-xs text-muted">
           <span>{question.scaleLabels?.min ?? min}</span>
-          <span className="text-base font-semibold text-brand-dark">{current}</span>
+          {answered ? (
+            <span className="text-base font-semibold text-brand-dark">{current}</span>
+          ) : (
+            <span className="font-medium text-amber-700">Drag or tap the slider to answer</span>
+          )}
           <span>{question.scaleLabels?.max ?? max}</span>
         </div>
       </div>
