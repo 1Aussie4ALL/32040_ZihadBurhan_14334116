@@ -1,6 +1,6 @@
 # Changelog
 
-Changes to the AI appointment triage prototype, newest first. Numbers such as 6.1 refer to
+Changes to the AI appointment triage prototype, newest first. Numbers such as 7.5 refer to
 work packages in the project Gantt chart. The full code changes behind each entry are in the
 git history.
 
@@ -63,56 +63,3 @@ miss and didn't say which field was wrong.
 
 - Fixed the package lockfile so a clean install (`npm ci`) works, and approved the install
   steps npm now requires for the database and build tools.
-
-## 16 September 2026: Integration, testing and evaluation (6.1–6.6)
-
-- **6.1 Error handling:** friendly error pages replace the default crash screen. Patient
-  pages repeat the "call 000" advice and state that nothing was submitted. The clinician page
-  warns that a failed load must not be read as an empty queue. Adds a custom "page not
-  found" page.
-- **6.2 Testing:** integration tests run against a real, temporary database. They cover
-  submitting a booking, preventing double-booking, and clinician overrides with an audit
-  trail. 74 tests, up from 47.
-- **6.3 Scenario runs:** `npm run evaluate` runs all 26 simulated patient scenarios through
-  the real system and regenerates
-  [docs/evaluation-results.md](docs/evaluation-results.md).
-- **6.4 Workflow comparison:** the system was scored against two models of conventional
-  booking over the same 26 scenarios. Accuracy was 100% for the system, against 19.2%
-  (no triage) and 50.0% (keyword triage). Emergency recall was 100%, against 0% and 83.3%.
-  See [docs/workflow-comparison.md](docs/workflow-comparison.md).
-- **6.5 Accuracy, usability and completeness:** each request captures 8.0 clinical data
-  points, against 1.0 for a free-text form. Includes a heuristic usability review. The 100%
-  accuracy measures consistency with the author's own scenarios, not clinical validity.
-- **6.6 Safety, explainability, privacy and security:**
-  [docs/safety-explainability-assessment.md](docs/safety-explainability-assessment.md)
-  contains an explainability audit, a 10-item hazard analysis, and privacy and security
-  reviews. It notes that the reception role is shown but not enforced, so reception staff can
-  currently see a patient's full symptom history.
-
-## 16 September 2026: Rebuilt as a single web application (6.1)
-
-- Replaced the first prototype (6 backend services, 2 front-end apps, Docker) with one
-  Next.js application and a SQLite database, which is simpler to run and demonstrate. The
-  earlier version is kept in `_archive/careprior-v1/`.
-- Follow-up questions now match the chosen complaint category. Before, a severe stomach
-  complaint could be asked heart-related questions.
-- Answers from a category the patient backed out of are discarded, so they can't set off the
-  wrong safety rule (a cardiac warning had fired on an ankle injury).
-- Every answer is checked against the question it belongs to. Invalid values, such as a
-  severity of 999, are rejected rather than adjusted, because an adjusted answer could lower
-  the urgency.
-- 47 tests, up from 36.
-
-## 31 July 2026: Doctor, insurance and time selection
-
-- Added doctor, insurance and appointment-time steps to the booking flow, backed by simulated
-  scheduling.
-
-## 29 July 2026: First working prototype (CarePrior v1)
-
-- End-to-end version of the case study: adaptive questions, safety rules, simulated AI
-  interpretation, prioritisation, staff review and override, and an audit log. Built as six
-  backend services, a patient portal and a staff dashboard.
-- Fixed demo logins, which strict email checking had been rejecting.
-
-## 27 July 2026: Project started
