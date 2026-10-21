@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "./Button";
+import { ValidationDialog, useValidationPrompt } from "./ValidationPrompt";
+import { getEmailError } from "@/lib/validation/email";
 
 export function ContactForm() {
   const [submitted, setSubmitted] = useState(false);
+  const prompt = useValidationPrompt();
 
   if (submitted) {
     return (
@@ -23,8 +26,17 @@ export function ContactForm() {
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        setSubmitted(true);
+        const data = new FormData(e.currentTarget);
+        const value = (key: string) => String(data.get(key) ?? "").trim();
+        const emailError = getEmailError(value("email"));
+        const ok = prompt.report([
+          ...(value("name") ? [] : [{ fieldId: "contact-name", message: "Name is required." }]),
+          ...(emailError ? [{ fieldId: "contact-email", message: emailError }] : []),
+          ...(value("message") ? [] : [{ fieldId: "contact-message", message: "Message is required." }]),
+        ]);
+        if (ok) setSubmitted(true);
       }}
+      noValidate
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -33,6 +45,7 @@ export function ContactForm() {
           </label>
           <input
             id="contact-name"
+            name="name"
             required
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-brand"
           />
@@ -43,6 +56,7 @@ export function ContactForm() {
           </label>
           <input
             id="contact-email"
+            name="email"
             type="email"
             required
             className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-brand"
@@ -55,6 +69,7 @@ export function ContactForm() {
         </label>
         <textarea
           id="contact-message"
+          name="message"
           required
           rows={4}
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-brand"
@@ -65,6 +80,8 @@ export function ContactForm() {
         personal or medical information. For an appointment request, use Book an Appointment instead.
       </p>
       <Button type="submit">Send message</Button>
+
+      <ValidationDialog {...prompt} />
     </form>
   );
 }

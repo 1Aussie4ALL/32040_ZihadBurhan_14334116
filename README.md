@@ -137,7 +137,7 @@ npm run test:watch   # watch mode
 npm run evaluate     # regenerates docs/evaluation-results.md from a live pipeline run
 ```
 
-74 tests cover the safety rule engine, the urgency-merge logic (including "AI can never
+136 tests cover the safety rule engine, the urgency-merge logic (including "AI can never
 downgrade a safety rule"), adaptive question selection and its category scoping, structured-answer
 validation against the question bank, appointment-timing guidance, the mock AI provider and its
 schema validation, AI-outage fallback behaviour, the conventional-booking baselines, and a full

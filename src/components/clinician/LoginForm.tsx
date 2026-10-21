@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
+import { getEmailError } from "@/lib/validation/email";
 import { loginAction } from "@/app/clinician/actions";
 
 export function LoginForm() {
@@ -11,9 +13,16 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const prompt = useValidationPrompt();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const emailError = getEmailError(email);
+    const ok = prompt.report([
+      ...(emailError ? [{ fieldId: "email", message: emailError }] : []),
+      ...(password ? [] : [{ fieldId: "password", message: "Password is required." }]),
+    ]);
+    if (!ok) return;
     setLoading(true);
     setError(null);
     const res = await loginAction(email, password);
@@ -27,7 +36,7 @@ export function LoginForm() {
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       <div>
         <label htmlFor="email" className="text-sm font-medium text-slate-700">
           Email
@@ -69,6 +78,8 @@ export function LoginForm() {
         <p>clinician@meridianhealth.demo / TriageDemo!23</p>
         <p>reception@meridianhealth.demo / TriageDemo!23</p>
       </div>
+
+      <ValidationDialog {...prompt} />
     </form>
   );
 }

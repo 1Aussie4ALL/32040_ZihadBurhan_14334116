@@ -22,7 +22,7 @@ describe("BookingWizard", () => {
     fireEvent.change(screen.getByLabelText("First name"), { target: { value: "Demo" } });
     fireEvent.change(screen.getByLabelText("Last name"), { target: { value: "Patient" } });
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1980-05-12" } });
-    fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "0412 345 678" } });
+    fireEvent.change(screen.getByLabelText("Mobile number"), { target: { value: "0412 345 678" } });
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "demo.patient@example.com" } });
     fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
 import { EmergencyBanner } from "@/components/triage/SafetyBanner";
 import { getAvailableSlotsAction } from "@/app/(site)/book/actions";
 import { assessAppointmentTiming } from "@/lib/triage/timing";
@@ -58,6 +59,7 @@ export function AppointmentPicker({
   const [insuranceType, setInsuranceType] = useState<InsuranceType | null>(initialInsurance);
   const [preferEarlierOnly, setPreferEarlierOnly] = useState(false);
   const [acknowledgedWarning, setAcknowledgedWarning] = useState(false);
+  const prompt = useValidationPrompt();
 
   useEffect(() => {
     // The parent keys this component by doctorId, so a doctor change remounts it
@@ -93,9 +95,28 @@ export function AppointmentPicker({
   const selectedTiming = selectedSlotId ? timingBySlot.get(selectedSlotId) ?? null : null;
   const pricing = getMockPricing(insuranceType);
 
-  const canSubmit = Boolean(
-    selectedSlotId && (!selectedTiming || selectedTiming.appropriate || acknowledgedWarning),
-  );
+  function handleConfirm() {
+    if (!selectedSlotId) {
+      prompt.report([{ fieldId: "slot-options", message: "Please choose an appointment time." }]);
+      return;
+    }
+    if (selectedTiming && !selectedTiming.appropriate && !acknowledgedWarning) {
+      prompt.report([
+        selectedTiming.isEmergencyOverride
+          ? {
+              fieldId: "emergency-ack",
+              message: "Please tick the box to confirm you understand this may need emergency care.",
+            }
+          : {
+              fieldId: "timing-warning",
+              message:
+                "This time is later than recommended. View earlier appointments, or choose \"Continue with selected appointment\".",
+            },
+      ]);
+      return;
+    }
+    onSubmit(selectedSlotId, insuranceType, acknowledgedWarning);
+  }
 
   return (
     <div className="space-y-6">
@@ -127,7 +148,7 @@ export function AppointmentPicker({
         </div>
       )}
 
-      <div className="space-y-5">
+      <div id="slot-options" className="space-y-5">
         {grouped.map((group) => (
           <div key={group.label}>
             <p className="text-sm font-semibold text-slate-800">{group.label}</p>
@@ -166,7 +187,7 @@ export function AppointmentPicker({
       )}
 
       {selectedSlot && selectedTiming && !selectedTiming.appropriate && !selectedTiming.isEmergencyOverride && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+        <div id="timing-warning" className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           <p className="font-semibold">{selectedTiming.message}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="outline" onClick={() => setPreferEarlierOnly(true)}>
@@ -185,7 +206,7 @@ export function AppointmentPicker({
       )}
 
       {selectedSlot && selectedTiming?.isEmergencyOverride && (
-        <label className="flex items-start gap-2 text-sm text-slate-700">
+        <label id="emergency-ack" className="flex items-start gap-2 p-1 text-sm text-slate-700">
           <input
             type="checkbox"
             className="mt-0.5"
@@ -199,7 +220,7 @@ export function AppointmentPicker({
 
       <fieldset>
         <legend className="text-sm font-medium text-slate-700">Insurance / payment (optional)</legend>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+        <div id="insurance-options" className="mt-2 grid gap-2 sm:grid-cols-2">
           {INSURANCE_OPTIONS.map((opt) => (
             <button
               type="button"
@@ -238,14 +259,12 @@ export function AppointmentPicker({
         <Button type="button" variant="outline" onClick={onBack} disabled={submitting}>
           Back
         </Button>
-        <Button
-          type="button"
-          disabled={!canSubmit || submitting}
-          onClick={() => selectedSlotId && onSubmit(selectedSlotId, insuranceType, acknowledgedWarning)}
-        >
+        <Button type="button" disabled={submitting} onClick={handleConfirm}>
           {submitting ? "Submitting…" : "Confirm appointment request"}
         </Button>
       </div>
+
+      <ValidationDialog {...prompt} />
     </div>
   );
 }

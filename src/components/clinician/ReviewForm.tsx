@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
 import { ALL_URGENCY_LEVELS } from "@/types";
 import type { UrgencyLevel } from "@/types";
 import { submitReviewAction } from "@/app/clinician/actions";
@@ -29,6 +30,7 @@ export function ReviewForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const prompt = useValidationPrompt();
 
   async function handleSave(markReviewed: boolean) {
     setSaving(true);
@@ -37,6 +39,7 @@ export function ReviewForm({
 
     if (overrideUrgency && overrideUrgency !== systemUrgency && !reason.trim()) {
       setError("Please provide a reason for overriding the system classification.");
+      prompt.report([{ fieldId: "reason", message: "Please provide a reason for overriding the system classification." }]);
       setSaving(false);
       return;
     }
@@ -126,6 +129,8 @@ export function ReviewForm({
           {alreadyReviewed ? "Update & keep reviewed" : "Mark as reviewed"}
         </Button>
       </div>
+
+      <ValidationDialog {...prompt} />
     </div>
   );
 }

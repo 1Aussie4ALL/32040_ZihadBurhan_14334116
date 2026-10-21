@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, Stethoscope } from "lucide-react";
 import clsx from "clsx";
 import { Container } from "./Card";
 import { LinkButton } from "./Button";
+import { ViewSwitcher, rememberPatientPath } from "./ViewSwitcher";
 
 const NAV_LINKS = [
   { href: "/services", label: "Services" },
@@ -18,6 +19,8 @@ const NAV_LINKS = [
 export function Header() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => rememberPatientPath(pathname), [pathname]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface/95 backdrop-blur">
@@ -44,7 +47,8 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-3 md:flex">
+          <ViewSwitcher current="patient" />
           <LinkButton href="/book" size="md">
             Book an Appointment
           </LinkButton>
@@ -77,6 +81,7 @@ export function Header() {
             <LinkButton href="/book" className="mt-2" onClick={() => setOpen(false)}>
               Book an Appointment
             </LinkButton>
+            <ViewSwitcher current="patient" className="mt-2 self-start" />
           </Container>
         </div>
       )}

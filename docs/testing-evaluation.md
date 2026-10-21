@@ -2,7 +2,7 @@
 
 ## Automated test suite
 
-`npm run test` (Vitest). 74 tests across 10 files. Most are logic-level (no browser required); one file runs against a real database.
+`npm run test` (Vitest). 136 tests across 15 files. Most are logic-level (no browser required); one file runs against a real database, and component tests render the booking wizard, validation pop-up and urgency badge in a simulated browser (jsdom).
 
 | File | Covers |
 |---|---|

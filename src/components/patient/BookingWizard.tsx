@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, RotateCcw } from "lucide-react";
 import { Card, Container } from "@/components/common/Card";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
 import { StepIndicator } from "./StepIndicator";
 import { DetailsForm } from "./DetailsForm";
 import { ConcernForm } from "./ConcernForm";
@@ -14,6 +15,8 @@ import { DoctorPicker } from "./DoctorPicker";
 import { AppointmentPicker } from "./AppointmentPicker";
 import { assessTriageAction, submitBookingAction } from "@/app/(site)/book/actions";
 import { calculateAgeYears } from "@/lib/triage/doctorMatch";
+import { BOOKING_STEP_NAMES, type BookingFieldError } from "@/lib/validation/bookingErrors";
+import type { PatientDetailsErrors } from "@/lib/validation/patientDetails";
 import type { AnswerMap, ComplaintCategory, InsuranceType, PatientDetailsInput, TriageResult } from "@/types";
 
 const EMPTY_PATIENT: PatientDetailsInput = {
@@ -46,9 +49,21 @@ export function BookingWizard({
   const [assessError, setAssessError] = useState<string | null>(null);
 
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(initialDoctorId);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [insuranceType, setInsuranceType] = useState<InsuranceType | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // When the final submit is rejected, these are the problems to show on the step
+  // the patient is sent back to. If only their details were wrong, nothing that
+  // feeds triage changed, so they can return straight to the appointment step.
+  const [fixErrors, setFixErrors] = useState<BookingFieldError[]>([]);
+  const [returnToAppointment, setReturnToAppointment] = useState(false);
+  const prompt = useValidationPrompt();
+
+  const errorsFor = (step: number) =>
+    Object.fromEntries(fixErrors.filter((e) => e.step === step).map((e) => [e.fieldId, e.message]));
 
   // Takes the answers explicitly: when called straight after setAnswers(), the
   // `answers` state in this closure is still the previous render's value.
@@ -69,6 +84,8 @@ export function BookingWizard({
 
   async function handleSubmit(slotId: string, insurance: InsuranceType | null, proceedDespiteWarning: boolean) {
     if (!category || !selectedDoctorId) return;
+    setSelectedSlotId(slotId);
+    setInsuranceType(insurance);
     setIsSubmitting(true);
     setSubmitError(null);
     const res = await submitBookingAction({
@@ -84,9 +101,27 @@ export function BookingWizard({
     setIsSubmitting(false);
     if (res.success) {
       router.push(`/request/${res.appointmentRequestId}/confirmation`);
+    } else if (res.fieldErrors?.length) {
+      showSubmitProblems(res.fieldErrors);
     } else {
       setSubmitError(res.error);
     }
+  }
+
+  function showSubmitProblems(errors: BookingFieldError[]) {
+    const target = errors[0].step; // sorted earliest step first
+    prompt.report(
+      errors.map((e) => ({ fieldId: e.fieldId, message: e.message, section: BOOKING_STEP_NAMES[e.step] })),
+      {
+        title: "We couldn't send your request yet",
+        actionLabel: target === step ? "Show me" : `Go to ${BOOKING_STEP_NAMES[target]}`,
+        beforeReveal: () => {
+          setFixErrors(errors);
+          setReturnToAppointment(errors.every((e) => e.step === 1));
+          setStep(target);
+        },
+      },
+    );
   }
 
   const ageYears = patient.dateOfBirth ? calculateAgeYears(new Date(patient.dateOfBirth)) : null;
@@ -101,9 +136,21 @@ export function BookingWizard({
         {step === 1 && (
           <DetailsForm
             value={patient}
+            initialErrors={errorsFor(1) as PatientDetailsErrors}
+            notice={
+              returnToAppointment
+                ? "Please fix the highlighted details. You'll go straight back to your appointment time afterwards."
+                : undefined
+            }
             onNext={(details) => {
               setPatient(details);
-              setStep(2);
+              setFixErrors([]);
+              if (returnToAppointment) {
+                setReturnToAppointment(false);
+                setStep(6);
+              } else {
+                setStep(2);
+              }
             }}
           />
         )}
@@ -112,10 +159,15 @@ export function BookingWizard({
           <ConcernForm
             initialCategory={category}
             initialConcernText={concernText}
+            initialErrors={{
+              category: errorsFor(2)["category-options"],
+              concernText: errorsFor(2)["concernText"],
+            }}
             onBack={() => setStep(1)}
             onNext={(c, text) => {
               setCategory(c);
               setConcernText(text);
+              setFixErrors([]);
               setStep(3);
             }}
           />
@@ -169,6 +221,7 @@ export function BookingWizard({
             initialDoctorId={selectedDoctorId}
             onBack={() => setStep(4)}
             onNext={(doctorId) => {
+              if (doctorId !== selectedDoctorId) setSelectedSlotId(null);
               setSelectedDoctorId(doctorId);
               setStep(6);
             }}
@@ -180,8 +233,8 @@ export function BookingWizard({
             key={selectedDoctorId}
             doctorId={selectedDoctorId}
             urgencyLevel={triageResult.urgencyLevel}
-            initialSlotId={null}
-            initialInsurance={null}
+            initialSlotId={selectedSlotId}
+            initialInsurance={insuranceType}
             onBack={() => setStep(5)}
             onSubmit={handleSubmit}
             submitting={isSubmitting}
@@ -189,6 +242,8 @@ export function BookingWizard({
           />
         )}
       </Card>
+
+      <ValidationDialog {...prompt} />
     </Container>
   );
 }

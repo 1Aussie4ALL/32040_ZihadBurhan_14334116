@@ -2,6 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/common/Button";
+import { ValidationDialog, useValidationPrompt } from "@/components/common/ValidationPrompt";
+import {
+  getPatientDetailsErrors,
+  PATIENT_FIELD_ORDER,
+  type PatientDetailsErrors,
+} from "@/lib/validation/patientDetails";
 import type { PatientDetailsInput } from "@/types";
 
 const SEX_OPTIONS = [
@@ -20,24 +26,39 @@ function fieldClass(hasError: boolean) {
 
 export function DetailsForm({
   value,
+  initialErrors,
+  notice,
   onNext,
 }: {
   value: PatientDetailsInput;
+  /** Errors to show on arrival, e.g. when the final submit sent the patient back here. */
+  initialErrors?: PatientDetailsErrors;
+  notice?: string;
   onNext: (details: PatientDetailsInput) => void;
 }) {
   const [form, setForm] = useState<PatientDetailsInput>(value);
-  const [errors, setErrors] = useState<Partial<Record<keyof PatientDetailsInput, string>>>({});
+  const [errors, setErrors] = useState<PatientDetailsErrors>(initialErrors ?? {});
+  const prompt = useValidationPrompt();
+
+  function update<K extends keyof PatientDetailsInput>(key: K, val: PatientDetailsInput[K]) {
+    setForm({ ...form, [key]: val });
+    if (errors[key]) setErrors({ ...errors, [key]: undefined });
+  }
+
+  // Explain a field as soon as the patient leaves it, but only once they've typed
+  // something: tabbing past an empty field shouldn't nag before they've submitted.
+  function checkField(key: keyof PatientDetailsInput) {
+    if (!String(form[key] ?? "").trim()) return;
+    const message = getPatientDetailsErrors(form)[key];
+    if (message) setErrors((prev) => ({ ...prev, [key]: message }));
+  }
 
   function validate(): boolean {
-    const next: typeof errors = {};
-    if (!form.firstName.trim()) next.firstName = "First name is required.";
-    if (!form.lastName.trim()) next.lastName = "Last name is required.";
-    if (!form.dateOfBirth) next.dateOfBirth = "Date of birth is required.";
-    else if (new Date(form.dateOfBirth) > new Date()) next.dateOfBirth = "Date of birth cannot be in the future.";
-    if (!form.phone.trim() || form.phone.trim().length < 6) next.phone = "Enter a valid phone number.";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) next.email = "Enter a valid email address.";
+    const next = getPatientDetailsErrors(form);
     setErrors(next);
-    return Object.keys(next).length === 0;
+    return prompt.report(
+      PATIENT_FIELD_ORDER.filter((key) => next[key]).map((key) => ({ fieldId: key, message: next[key]! })),
+    );
   }
 
   return (
@@ -56,13 +77,20 @@ export function DetailsForm({
         </p>
       </div>
 
+      {notice && (
+        <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          {notice}
+        </p>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="First name" id="firstName" error={errors.firstName}>
           <input
             id="firstName"
             className={fieldClass(Boolean(errors.firstName))}
             value={form.firstName}
-            onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+            onChange={(e) => update("firstName", e.target.value)}
+            onBlur={() => checkField("firstName")}
             autoComplete="given-name"
           />
         </Field>
@@ -71,7 +99,8 @@ export function DetailsForm({
             id="lastName"
             className={fieldClass(Boolean(errors.lastName))}
             value={form.lastName}
-            onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+            onChange={(e) => update("lastName", e.target.value)}
+            onBlur={() => checkField("lastName")}
             autoComplete="family-name"
           />
         </Field>
@@ -81,7 +110,8 @@ export function DetailsForm({
             type="date"
             className={fieldClass(Boolean(errors.dateOfBirth))}
             value={form.dateOfBirth}
-            onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+            onChange={(e) => update("dateOfBirth", e.target.value)}
+            onBlur={() => checkField("dateOfBirth")}
             autoComplete="bday"
           />
         </Field>
@@ -101,13 +131,16 @@ export function DetailsForm({
             ))}
           </select>
         </Field>
-        <Field label="Phone" id="phone" error={errors.phone}>
+        <Field label="Mobile number" id="phone" error={errors.phone}>
           <input
             id="phone"
             type="tel"
+            inputMode="numeric"
+            placeholder="0412 345 678"
             className={fieldClass(Boolean(errors.phone))}
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => update("phone", e.target.value)}
+            onBlur={() => checkField("phone")}
             autoComplete="tel"
           />
         </Field>
@@ -117,7 +150,8 @@ export function DetailsForm({
             type="email"
             className={fieldClass(Boolean(errors.email))}
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            onChange={(e) => update("email", e.target.value)}
+            onBlur={() => checkField("email")}
             autoComplete="email"
           />
         </Field>
@@ -126,6 +160,8 @@ export function DetailsForm({
       <div className="flex justify-end pt-2">
         <Button type="submit">Continue</Button>
       </div>
+
+      <ValidationDialog {...prompt} />
     </form>
   );
 }
