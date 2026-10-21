@@ -6,6 +6,7 @@ import {
   getClinicianQueue,
   getRequestDetail,
   SlotUnavailableError,
+  OverrideReasonRequiredError,
 } from "@/lib/database/requests";
 import { getAvailableSlots } from "@/lib/database/doctors";
 import type { AnswerMap, PatientDetailsInput } from "@/types";
@@ -315,6 +316,82 @@ describe("clinician queue and review (real database)", () => {
     expect(reviews).toHaveLength(1); // upserted, not duplicated
     expect(reviews[0].note).toBe("Second pass.");
     expect(reviews[0].reviewed).toBe(true);
+  });
+
+  it("rejects an override with no reason, even when the client check is bypassed", async () => {
+    const free = await prisma.appointmentSlot.findFirstOrThrow({
+      where: { isBooked: false, startTime: { gt: new Date() } },
+    });
+    const doctor = { id: free.doctorId };
+    const slot = await takeSlot(doctor.id);
+    const { appointmentRequestId } = await submitAppointmentRequest({
+      patient: PATIENT,
+      category: "general_consultation",
+      concernText: "Routine review.",
+      answers: ROUTINE_ANSWERS,
+      selectedDoctorId: doctor.id,
+      selectedSlotId: slot.id,
+      insuranceType: null,
+      proceedDespiteWarning: false,
+    });
+    const clinician = await prisma.clinician.findFirstOrThrow();
+
+    await expect(
+      submitClinicianReview({
+        requestId: appointmentRequestId,
+        clinicianId: clinician.id,
+        overrideUrgency: "Priority",
+        overrideReason: "   ",
+        markReviewed: true,
+      }),
+    ).rejects.toBeInstanceOf(OverrideReasonRequiredError);
+
+    const detail = await getRequestDetail(appointmentRequestId);
+    expect(detail!.clinicianReview).toBeNull();
+    expect(detail!.auditLogs.map((l) => l.eventType)).not.toContain("clinician_overrode_classification");
+  });
+
+  it("keeps the reviewed timestamp when a note is saved after review", async () => {
+    const queue = await getClinicianQueue({ reviewed: true });
+    const target = queue[0];
+    const before = target.clinicianReview!.reviewedAt;
+    expect(before).toBeInstanceOf(Date);
+    const clinician = await prisma.clinician.findFirstOrThrow();
+
+    await submitClinicianReview({
+      requestId: target.id,
+      clinicianId: clinician.id,
+      overrideUrgency: target.clinicianReview!.overrideUrgency as "Priority" | null,
+      overrideReason: target.clinicianReview!.overrideReason ?? undefined,
+      note: "Follow-up note added later.",
+      markReviewed: false,
+    });
+
+    const review = await prisma.clinicianReview.findUniqueOrThrow({ where: { appointmentRequestId: target.id } });
+    expect(review.reviewed).toBe(true);
+    expect(review.reviewedAt?.getTime()).toBe(before!.getTime());
+  });
+
+  it("audits an override once, not again on every save that leaves it unchanged", async () => {
+    const queue = await getClinicianQueue({ reviewed: true });
+    const target = queue.find((r) => r.clinicianReview?.overrideUrgency)!;
+    const clinician = await prisma.clinician.findFirstOrThrow();
+    const countOverrides = async () =>
+      prisma.systemAuditLog.count({
+        where: { appointmentRequestId: target.id, eventType: "clinician_overrode_classification" },
+      });
+    const before = await countOverrides();
+
+    await submitClinicianReview({
+      requestId: target.id,
+      clinicianId: clinician.id,
+      overrideUrgency: target.clinicianReview!.overrideUrgency as "Priority",
+      overrideReason: target.clinicianReview!.overrideReason ?? undefined,
+      note: "Just updating the note.",
+      markReviewed: false,
+    });
+
+    expect(await countOverrides()).toBe(before);
   });
 
   it("throws for a review against a request that does not exist", async () => {

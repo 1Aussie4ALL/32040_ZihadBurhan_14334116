@@ -16,6 +16,13 @@ export class SlotUnavailableError extends Error {
   }
 }
 
+export class OverrideReasonRequiredError extends Error {
+  constructor() {
+    super("Please provide a reason for overriding the system classification.");
+    this.name = "OverrideReasonRequiredError";
+  }
+}
+
 export interface SubmitAppointmentRequestInput {
   patient: PatientDetailsInput;
   category: ComplaintCategory;
@@ -260,6 +267,12 @@ export async function submitClinicianReview(input: ClinicianReviewInput) {
 
   const isOverride =
     Boolean(input.overrideUrgency) && input.overrideUrgency !== request.triageAssessment?.urgencyLevel;
+  // The form enforces this too, but an unexplained override must never reach the audit trail.
+  if (isOverride && !input.overrideReason?.trim()) {
+    throw new OverrideReasonRequiredError();
+  }
+  // Only a change of override is audited; re-saving the same one (e.g. to edit the note) is not.
+  const overrideChanged = isOverride && input.overrideUrgency !== request.clinicianReview?.overrideUrgency;
 
   await prisma.$transaction(async (tx) => {
     await tx.clinicianReview.upsert({
@@ -275,11 +288,12 @@ export async function submitClinicianReview(input: ClinicianReviewInput) {
       },
       update: {
         clinicianId: input.clinicianId,
-        reviewed: input.markReviewed ?? undefined,
+        // Saving a note or override on a reviewed request leaves it reviewed.
+        reviewed: input.markReviewed ? true : undefined,
         overrideUrgency: input.overrideUrgency ?? null,
         overrideReason: input.overrideReason ?? null,
         note: input.note ?? null,
-        reviewedAt: input.markReviewed ? new Date() : null,
+        reviewedAt: input.markReviewed ? new Date() : undefined,
       },
     });
 
@@ -287,7 +301,7 @@ export async function submitClinicianReview(input: ClinicianReviewInput) {
       await tx.appointmentRequest.update({ where: { id: input.requestId }, data: { status: "reviewed" } });
     }
 
-    if (isOverride) {
+    if (overrideChanged) {
       await writeAuditLog(tx, {
         appointmentRequestId: input.requestId,
         eventType: "clinician_overrode_classification",

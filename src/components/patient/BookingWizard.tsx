@@ -50,15 +50,18 @@ export function BookingWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  async function runAssessment() {
+  // Takes the answers explicitly: when called straight after setAnswers(), the
+  // `answers` state in this closure is still the previous render's value.
+  async function runAssessment(currentAnswers: AnswerMap) {
     if (!category) return;
+    // Step 4 holds the progress spinner and the error/retry view as well as the result.
+    setStep(4);
     setIsAssessing(true);
     setAssessError(null);
-    const res = await assessTriageAction(category, concernText, answers);
+    const res = await assessTriageAction(category, concernText, currentAnswers);
     setIsAssessing(false);
     if (res.success) {
       setTriageResult(res.result);
-      setStep(4);
     } else {
       setAssessError(res.error);
     }
@@ -127,7 +130,7 @@ export function BookingWizard({
             onComplete={(finalAnswers, finalAskedIds) => {
               setAnswers(finalAnswers);
               setAskedIds(finalAskedIds);
-              void runAssessment();
+              void runAssessment(finalAnswers);
             }}
           />
         )}
@@ -147,7 +150,7 @@ export function BookingWizard({
                   <Button variant="outline" onClick={() => setStep(3)}>
                     Back to questions
                   </Button>
-                  <Button onClick={() => void runAssessment()}>
+                  <Button onClick={() => void runAssessment(answers)}>
                     <RotateCcw size={16} aria-hidden="true" /> Try again
                   </Button>
                 </div>

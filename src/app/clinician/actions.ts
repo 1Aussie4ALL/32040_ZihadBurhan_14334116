@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { loginClinician, logoutClinician, requireClinician } from "@/lib/auth/session";
 import { clinicianLoginSchema, clinicianOverrideSchema } from "@/lib/validation/schemas";
-import { submitClinicianReview } from "@/lib/database/requests";
+import { submitClinicianReview, OverrideReasonRequiredError } from "@/lib/database/requests";
 import { runAndPersistEvaluation } from "@/lib/evaluation/runner";
 import type { EvaluationSummary } from "@/types";
 
@@ -45,7 +45,10 @@ export async function submitReviewAction(
       note: parsed.data.note,
       markReviewed: parsed.data.markReviewed,
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof OverrideReasonRequiredError) {
+      return { success: false, error: error.message };
+    }
     return { success: false, error: "Could not save this review. Please try again." };
   }
 
